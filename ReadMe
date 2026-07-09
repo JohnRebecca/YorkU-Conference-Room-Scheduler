@@ -1,1 +1,33 @@
-Coming Soon
+# YorkU Conference Room Scheduler
+
+## Project Overview
+
+The **YorkU Conference Room Scheduler** is a GUI-based Java application designed to support room booking and conference room management for York University.
+
+The full system is intended to support registered users, administrators, and the Chief Event Coordinator. Users can book available rooms, edit or cancel bookings before the start time, extend bookings before expiry if the room is available, and interact with related modules such as payment, profile, room management, and check-in.
+
+This repository currently includes the **Booking Management module**, focused on Req3, Req8, and Req9.
+
+---
+
+## Booking Management Scope
+
+This implementation focuses on the following requirements:
+
+### Req3: Room Booking and Hourly Rates
+
+Registered users can book available rooms. Room booking cost is calculated based on the user's account type.
+
+Example hourly rates:
+
+| Account Type | Hourly Rate |
+|-------------|-------------|
+| Student | $20/hour |
+| Faculty | $30/hour |
+| Staff | $40/hour |
+| Partner | $50/hour |
+
+The booking system calculates total cost using:
+
+```text
+total cost = booking duration × account type hourly rate
