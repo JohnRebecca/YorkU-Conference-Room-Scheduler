@@ -6,28 +6,35 @@ The **YorkU Conference Room Scheduler** is a GUI-based Java application designed
 
 The full system is intended to support registered users, administrators, and the Chief Event Coordinator. Users can book available rooms, edit or cancel bookings before the start time, extend bookings before expiry if the room is available, and interact with related modules such as payment, profile, room management, and check-in.
 
-This repository currently includes the **Booking Management module**, focused on Req3, Req8, and Req9.
+This repository currently includes the **Booking Management module**, focused on **Req3**, **Req8**, and **Req9**.
 
 ---
 
 ## Booking Management Scope
 
-This implementation focuses on the following requirements:
+```text
+How to Run the Project
+Using Eclipse
+Open Eclipse.
+Select File → Open Projects from File System.
+Choose the project folder:
+YorkURoomScheduler
+Open:
+src/scheduler/Main.java
+Right-click Main.java.
+Select Run As → Java Application.
 
-### Req3: Room Booking and Hourly Rates
+The Java Swing application window should open.
 
-Registered users can book available rooms. Room booking cost is calculated based on the user's account type.
+Using VS Code
+Open the project folder in VS Code.
+Make sure the Java Extension Pack is installed.
+Open:
+src/scheduler/Main.java
+Click Run above the main method, or run from the terminal if Java is configured.
 
-Example hourly rates:
 
-| Account Type | Hourly Rate |
-|-------------|-------------|
-| Student | $20/hour |
-| Faculty | $30/hour |
-| Staff | $40/hour |
-| Partner | $50/hour |
-
-The booking system calculates total cost using:
+After pasting it, scroll to the bottom and commit with:
 
 ```text
-total cost = booking duration × account type hourly rate
+Fix README markdown formatting
