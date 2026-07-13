@@ -1,0 +1,25 @@
+# Eclipse files
+.metadata
+bin/
+.settings/
+.classpath
+.project
+
+# VS Code files
+.vscode/
+
+# Java compiled files
+*.class
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+
+# SQLite runtime database files
+data/*.db
+data/*.db-journal
+data/*.db-shm
+data/*.db-wal
