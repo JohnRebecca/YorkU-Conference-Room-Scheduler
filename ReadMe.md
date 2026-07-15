@@ -1,7 +1,8 @@
+My section is organized into five packages: ui for the graphical user interface screens, model for the data models, exceptions for custom error handling, service for the business logic, and strategy for the Strategy Pattern implementation of payment methods. The ui package depends on the service package, which in turn uses the model and strategy packages.
+
+
 1. york.roombooking.ui — User Interface
 Purpose: Contains all Swing GUI screens for the payment module.
-
-"My section is organized into five packages: ui for the graphical user interface screens, model for the data models, exceptions for custom error handling, service for the business logic, and strategy for the Strategy Pattern implementation of payment methods. The ui package depends on the service package, which in turn uses the model and strategy packages."
 
 Class	What It Does
 PaymentUI	Checkout screen — user selects payment method, enters card details, pays deposit
