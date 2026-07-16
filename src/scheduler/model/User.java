@@ -10,7 +10,7 @@ public abstract class User {
     private final String userId;
     private String fullName;
     private final String email;
-    private final String passwordHash;
+    private String passwordHash;
     private AccountStatus accountStatus;
     private final LocalDateTime createdAt;
 
@@ -36,6 +36,10 @@ public abstract class User {
 
     public void updateProfile(String fullName) {
         this.fullName = requireText(fullName, "Full name");
+    }
+    
+    public void updatePasswordHash(String passwordHash) {
+        this.passwordHash = requireText( passwordHash, "Password hash" );
     }
 
     public boolean isActive() {

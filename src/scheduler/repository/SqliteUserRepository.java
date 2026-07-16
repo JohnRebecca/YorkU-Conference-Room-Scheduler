@@ -97,6 +97,34 @@ public final class SqliteUserRepository implements UserRepository {
             );
         }
     }
+    
+    @Override
+    public void updateProfile( String userId, String fullName, String passwordHash ) {
+        String sql = """
+            UPDATE users
+            SET full_name = ?,
+                password_hash = ?
+            WHERE user_id = ?
+            """;
+
+        try (
+                Connection connection = DatabaseManager.getConnection();
+                PreparedStatement statement = connection.prepareStatement(sql)
+        ) {
+            statement.setString(1, fullName);
+            statement.setString(2, passwordHash);
+            statement.setString(3, userId);
+
+            int affectedRows = statement.executeUpdate();
+
+            if (affectedRows != 1) {
+                throw new IllegalStateException( "The user account could not be updated." );
+            }
+
+        } catch (SQLException exception) {
+            throw new IllegalStateException( "Could not update the user profile.", exception );
+        }
+    }
 
     private Optional<RegisteredUser> findOne(
             String sql,

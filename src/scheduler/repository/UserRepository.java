@@ -13,4 +13,6 @@ public interface UserRepository {
     Optional<RegisteredUser> findById(String userId);
 
     boolean emailExists(String email);
+    
+    void updateProfile(String userId, String fullName, String passwordHash);
 }

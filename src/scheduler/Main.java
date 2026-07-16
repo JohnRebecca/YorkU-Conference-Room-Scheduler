@@ -6,12 +6,14 @@ import javax.swing.UIManager;
 import scheduler.database.DatabaseManager;
 import scheduler.factory.AccountFactory;
 import scheduler.factory.RegisteredUserFactory;
+import scheduler.model.RegisteredUser;
 import scheduler.repository.AccountTypeRepository;
 import scheduler.repository.SqliteAccountTypeRepository;
 import scheduler.repository.SqliteUserRepository;
 import scheduler.repository.UserRepository;
 import scheduler.service.AccountRegistrationService;
 import scheduler.service.AuthenticationService;
+import scheduler.service.ProfileService;
 import scheduler.service.VerificationService;
 import scheduler.view.AuthFrame;
 import scheduler.view.MainFrame;
@@ -42,6 +44,8 @@ public final class Main {
                 verificationService,
                 accountFactory
         );
+        
+        ProfileService profileService = new ProfileService(userRepository);
 
         AuthenticationService authenticationService = new AuthenticationService(userRepository);
 
@@ -52,18 +56,50 @@ public final class Main {
             // in successfully, it hands the authenticated RegisteredUser back here,
             // and this is the one place that decides what happens next: close the
             // auth window and open the booking management screens (Req3, Req8, Req9).
-            AuthFrame[] authFrameHolder = new AuthFrame[1];
-            authFrameHolder[0] = new AuthFrame(
-                    registrationService,
-                    authenticationService,
-                    user -> {
-                        authFrameHolder[0].dispose();
-                        MainFrame mainFrame = new MainFrame(user);
-                        mainFrame.setVisible(true);
-                    }
-            );
-            authFrameHolder[0].setVisible(true);
+            showAuthFrame(registrationService, authenticationService, profileService );
         });
+    }
+    private static void showAuthFrame(
+            AccountRegistrationService registrationService,
+            AuthenticationService authenticationService,
+            ProfileService profileService
+    ) {
+        AuthFrame[] authFrameHolder = new AuthFrame[1];
+
+        authFrameHolder[0] = new AuthFrame(
+                        registrationService,
+                        authenticationService,
+                        user -> {
+                            authFrameHolder[0].dispose();
+                            showMainFrame(
+                                    user,
+                                    registrationService,
+                                    authenticationService,
+                                    profileService
+                            );
+                        });
+        authFrameHolder[0].setVisible(true);
+    }
+
+    private static void showMainFrame(
+            RegisteredUser user,
+            AccountRegistrationService registrationService,
+            AuthenticationService authenticationService,
+            ProfileService profileService
+    ) {
+        MainFrame mainFrame =
+                new MainFrame(
+                        user,
+                        profileService,
+                        () -> {
+                            authenticationService.logout();
+                            showAuthFrame(
+                                    registrationService,
+                                    authenticationService,
+                                    profileService
+                            );
+                        });
+        mainFrame.setVisible(true);
     }
 
     private static void setLookAndFeel() {

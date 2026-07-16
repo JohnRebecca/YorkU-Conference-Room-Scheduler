@@ -4,6 +4,7 @@ import scheduler.model.RegisteredUser;
 import scheduler.model.Room;
 import scheduler.service.BookingService;
 import scheduler.service.CheckInService;
+import scheduler.service.ProfileService;
 import scheduler.service.RoomService;
 
 import javax.swing.*;
@@ -22,18 +23,21 @@ public class MainFrame extends JFrame {
 
     private MyBookingsPanel myBookingsPanel;
     private BookingFormPanel bookingFormPanel;
+    private JLabel userLabel;
+    private final Runnable logoutHandler;
 
     private final Map<String, SidebarButton> navButtons = new LinkedHashMap<>();
 
-    public MainFrame(RegisteredUser currentUser) {
+    public MainFrame(RegisteredUser currentUser, ProfileService profileService, Runnable logoutHandler) {
         setTitle("YorkU Conference Room Scheduler");
         setSize(1150, 760);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setLocationRelativeTo(null);
         getContentPane().setBackground(Theme.BG);
+        this.logoutHandler = logoutHandler;
 
         setupData(currentUser);
-        setupLayout();
+        setupLayout(profileService);
     }
 
     /**
@@ -61,7 +65,7 @@ public class MainFrame extends JFrame {
         checkInService = new CheckInService();
     }
 
-    private void setupLayout() {
+    private void setupLayout(ProfileService profileService) {
         setLayout(new BorderLayout());
 
         JPanel sidebarPanel = createSidebarPanel();
@@ -96,10 +100,7 @@ public class MainFrame extends JFrame {
                 "Credit card, debit card, and institutional billing are handled by another module. Booking management only tracks the 1-hour upfront deposit and remaining balance."
         );
 
-        PlaceholderPanel profilePanel = new PlaceholderPanel(
-                "Profile",
-                "Account creation, password rules, and university verification are handled by the account & authentication module. Log in with a different account to test booking behavior under a different account type."
-        );
+        ProfilePanel profilePanel =  new ProfilePanel( profileService, userContext );
 
         PlaceholderPanel checkInPanel = new PlaceholderPanel(
                 "Check In",
@@ -189,8 +190,38 @@ public class MainFrame extends JFrame {
 
         sidebarPanel.add(north, BorderLayout.NORTH);
         sidebarPanel.add(navWrapper, BorderLayout.CENTER);
+        sidebarPanel.add(createLogoutPanel(), BorderLayout.SOUTH);
 
         return sidebarPanel;
+    }
+    
+    private JPanel createLogoutPanel() {
+        JPanel panel = new JPanel(new BorderLayout());
+        panel.setBackground(Theme.BLACK);
+        panel.setBorder( BorderFactory.createEmptyBorder(12, 10, 18, 10));
+        SidebarButton logoutButton = new SidebarButton("Log Out", null);
+        logoutButton.setMaximumSize(new Dimension(Integer.MAX_VALUE, 46));
+        logoutButton.addActionListener(
+                event -> confirmLogout()
+        );
+        panel.add(logoutButton, BorderLayout.CENTER);
+        return panel;
+    }
+
+    private void confirmLogout() {
+        int result = JOptionPane.showConfirmDialog(
+                this,
+                "Are you sure you want to log out?",
+                "Confirm Logout",
+                JOptionPane.YES_NO_OPTION,
+                JOptionPane.QUESTION_MESSAGE
+        );
+
+        if (result != JOptionPane.YES_OPTION) {
+            return;
+        }
+        dispose();
+        logoutHandler.run();
     }
 
     /** Shows who is logged in per scheduler.service.AuthenticationService - no more switching between demo accounts. */
@@ -199,23 +230,49 @@ public class MainFrame extends JFrame {
         wrap.setOpaque(false);
         wrap.setAlignmentX(Component.LEFT_ALIGNMENT);
 
-        RegisteredUser user = userContext.getCurrentUser();
-
         JLabel label = new JLabel("Signed in as");
         label.setForeground(Theme.GRAY);
         label.setFont(Theme.bodyFont(11));
 
-        JLabel userLabel = new JLabel(
-                user.getFullName() + " \u2014 " + user.getAccountType().getName()
-                        + " ($" + user.getAccountType().getHourlyRate() + "/hr)"
-        );
+        userLabel = new JLabel();
         userLabel.setForeground(Theme.WHITE);
         userLabel.setFont(Theme.bodyFont(12));
+        
+        updateCurrentUserLabel();
 
         wrap.add(label, BorderLayout.NORTH);
         wrap.add(userLabel, BorderLayout.CENTER);
+        
+        userContext.addListener(this::updateCurrentUserLabel);
 
         return wrap;
+    }
+    
+    private void updateCurrentUserLabel() {
+        if (userLabel == null) {
+            return;
+        }
+        RegisteredUser user = userContext.getCurrentUser();
+        if (user == null) {
+            userLabel.setText("No user signed in");
+            return;
+        }
+
+        userLabel.setText(
+                "<html>"
+                        + escapeHtml(user.getFullName())
+                        + "<br>"
+                        + escapeHtml(user.getAccountType().getName())
+                        + " ($"
+                        + String.format(
+                                "%.2f",
+                                user.getHourlyRate()
+                        )
+                        + "/hr)"
+                        + "</html>" );
+
+        userLabel.revalidate();
+        userLabel.repaint();
     }
 
     private void registerNavButton(JPanel container, String cardName, String label, String iconFileName) {
@@ -233,5 +290,18 @@ public class MainFrame extends JFrame {
         navButtons.put(cardName, button);
         container.add(button);
         container.add(Box.createVerticalStrut(2));
+    }
+    
+    private String escapeHtml(String value) {
+        if (value == null) {
+            return "";
+        }
+
+        return value
+                .replace("&", "&amp;")
+                .replace("<", "&lt;")
+                .replace(">", "&gt;")
+                .replace("\"", "&quot;")
+                .replace("'", "&#39;");
     }
 }
