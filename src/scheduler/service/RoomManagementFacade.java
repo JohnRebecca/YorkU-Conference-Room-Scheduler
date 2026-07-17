@@ -1,18 +1,18 @@
 package scheduler.service;
 
 import scheduler.model.Administrator;
-import java.util.List;
 import scheduler.model.Room;
 import scheduler.repository.RoomDAO;
 import scheduler.repository.AdminDAO;
 import scheduler.model.ChiefEventCoordinator;
 import scheduler.util.RoomValidator;
 
+import java.util.List;
 
 public class RoomManagementFacade {
 
-    private RoomDAO roomDAO;
-    private AdminDAO adminDAO;
+    private final RoomDAO roomDAO;
+    private final AdminDAO adminDAO;
 
 
     public RoomManagementFacade() {
@@ -26,41 +26,39 @@ public class RoomManagementFacade {
     // Req6: Add Room
     public void addRoom(Room room) {
 
-
-        if(RoomValidator.validate(room)) {
+        if (RoomValidator.validate(room)) {
 
             roomDAO.insertRoom(room);
 
-        } 
-        else {
+        } else {
 
             System.out.println("Invalid room information");
 
         }
-
     }
 
 
     // Req6: Enable Room
-    public void enableRoom(int roomID) {
+    public void enableRoom(String roomID) {
 
-        roomDAO.updateRoomStatus(roomID, "ENABLED");
+        roomDAO.updateRoomStatus(roomID, true);
 
     }
 
 
     // Req6: Disable Room
-    public void disableRoom(int roomID) {
+    public void disableRoom(String roomID) {
 
-        roomDAO.updateRoomStatus(roomID, "DISABLED");
+        roomDAO.updateRoomStatus(roomID, false);
 
     }
 
 
     // Req6: Temporarily Close Room
-    public void closeRoom(int roomID) {
+    public void closeRoom(String roomID) {
 
-        roomDAO.updateRoomStatus(roomID, "CLOSED");
+        // Closing a room means disabling it temporarily
+        roomDAO.updateRoomStatus(roomID, false);
 
     }
 
@@ -68,18 +66,17 @@ public class RoomManagementFacade {
     // Req2: Generate Administrator Account
     public void generateAdministrator(Administrator admin) {
 
-    	ChiefEventCoordinator coordinator =
-    			ChiefEventCoordinator.getInstance();
-
+        ChiefEventCoordinator coordinator =
+                ChiefEventCoordinator.getInstance();
 
         coordinator.generateAdministrator(admin);
 
     }
-    
-    public List<Room> getAllRooms(){
+
+
+    public List<Room> getAllRooms() {
 
         return roomDAO.getAllRooms();
 
     }
-
 }

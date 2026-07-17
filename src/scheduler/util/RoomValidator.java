@@ -2,9 +2,7 @@ package scheduler.util;
 
 import scheduler.model.Room;
 
-
 public class RoomValidator {
-
 
     public static boolean validate(Room room) {
 
@@ -12,7 +10,7 @@ public class RoomValidator {
             return false;
         }
 
-        if (room.getRoomID() <= 0) {
+        if (room.getRoomId() == null || room.getRoomId().trim().isEmpty()) {
             return false;
         }
 
@@ -28,23 +26,6 @@ public class RoomValidator {
             return false;
         }
 
-        if (room.getStatus() == null) {
-            return false;
-        }
-
-        String status = room.getStatus().toUpperCase();
-
-
-        if (!(status.equals("ENABLED") ||
-              status.equals("DISABLED") ||
-              status.equals("CLOSED"))) {
-
-            return false;
-        }
-
-
         return true;
-
     }
-
 }

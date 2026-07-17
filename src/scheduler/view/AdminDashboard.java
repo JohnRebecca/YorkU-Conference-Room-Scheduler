@@ -255,20 +255,17 @@ public class AdminDashboard extends JFrame {
 
         addRoom.addActionListener(e -> {
 
+        	Room room = new Room(
 
-            Room room = new Room(
+        	        roomIDField.getText(),
 
-                    Integer.parseInt(roomIDField.getText()),
+        	        Integer.parseInt(capacityField.getText()),
 
-                    buildingField.getText(),
+        	        buildingField.getText(),
 
-                    locationField.getText(),
+        	        locationField.getText()
 
-                    Integer.parseInt(capacityField.getText()),
-
-                    "DISABLED"
-
-            );
+        	);
 
 
             facade.addRoom(room);
@@ -292,9 +289,9 @@ public class AdminDashboard extends JFrame {
         enableRoom.addActionListener(e -> {
 
 
-            facade.enableRoom(
-                    Integer.parseInt(roomIDField.getText())
-            );
+        	facade.enableRoom(
+        	        roomIDField.getText()
+        	);
 
 
             loadRooms();
@@ -309,9 +306,9 @@ public class AdminDashboard extends JFrame {
         disableRoom.addActionListener(e -> {
 
 
-            facade.disableRoom(
-                    Integer.parseInt(roomIDField.getText())
-            );
+        	facade.disableRoom(
+        	        roomIDField.getText()
+        	);
 
 
             loadRooms();
@@ -326,9 +323,9 @@ public class AdminDashboard extends JFrame {
         closeRoom.addActionListener(e -> {
 
 
-            facade.closeRoom(
-                    Integer.parseInt(roomIDField.getText())
-            );
+        	facade.closeRoom(
+        	        roomIDField.getText()
+        	);
 
 
             loadRooms();
@@ -383,19 +380,15 @@ public class AdminDashboard extends JFrame {
 
     private void loadRooms(){
 
-
         tableModel.setRowCount(0);
-
 
         List<Room> rooms = facade.getAllRooms();
 
-
         for(Room room : rooms){
-
 
             tableModel.addRow(new Object[]{
 
-                    room.getRoomID(),
+                    room.getRoomId(),
 
                     room.getBuilding(),
 
@@ -403,13 +396,13 @@ public class AdminDashboard extends JFrame {
 
                     room.getCapacity(),
 
-                    room.getStatus()
+                    room.isAvailableForBooking()
+                            ? "ENABLED"
+                            : "DISABLED"
 
             });
 
-
         }
-
 
     }
 
