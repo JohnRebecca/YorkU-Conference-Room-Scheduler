@@ -41,25 +41,29 @@ public class MainFrame extends JFrame {
     }
 
     /**
-     * Rooms are this subsystem's own data (no other module owns them), so they're
-     * still seeded here. The account/authentication side no longer is - currentUser
-     * comes in already authenticated by scheduler.service.AuthenticationService.
+     * Rooms now live in Saif's SQLite "rooms" table via RoomService/RoomDAO.
+     * These four are only inserted the first time the app runs against an empty
+     * database (e.g. a fresh clone) - once they exist, RoomService loads them
+     * back from the database instead of recreating them on every launch.
      */
     private void setupData(RegisteredUser currentUser) {
         userContext = new UserContext(currentUser);
 
-        Room room1 = new Room("DB-1001", 40, "DB Building", "First Floor");
-        Room room2 = new Room("LAS-2045", 25, "Lassonde Building", "Second Floor");
-        Room room3 = new Room("VH-3002", 60, "Vari Hall", "Third Floor");
-        Room room4 = new Room("ACW-109", 18, "Accolade West", "Main Floor");
-
-        room3.disable();
-
         roomService = new RoomService();
-        roomService.addRoom(room1);
-        roomService.addRoom(room2);
-        roomService.addRoom(room3);
-        roomService.addRoom(room4);
+
+        if (roomService.getRooms().isEmpty()) {
+            Room room1 = new Room("DB-1001", 40, "DB Building", "First Floor");
+            Room room2 = new Room("LAS-2045", 25, "Lassonde Building", "Second Floor");
+            Room room3 = new Room("VH-3002", 60, "Vari Hall", "Third Floor");
+            Room room4 = new Room("ACW-109", 18, "Accolade West", "Main Floor");
+
+            room3.disable();
+
+            roomService.addRoom(room1);
+            roomService.addRoom(room2);
+            roomService.addRoom(room3);
+            roomService.addRoom(room4);
+        }
 
         bookingService = new BookingService(roomService);
         checkInService = new CheckInService();

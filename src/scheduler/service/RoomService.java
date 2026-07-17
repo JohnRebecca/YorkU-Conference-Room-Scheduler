@@ -3,22 +3,50 @@ package scheduler.service;
 import scheduler.model.Booking;
 import scheduler.model.BookingStatus;
 import scheduler.model.Room;
+import scheduler.repository.RoomDAO;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * Rooms are now persisted through Saif's RoomDAO/SQLite "rooms" table instead of
+ * a hardcoded in-memory list, so admin actions (add / disable / reopen a room)
+ * are visible here too. The in-memory `rooms` list below is kept as a read cache
+ * so the booking-side methods (isRoomAvailable, findAvailableRooms) don't need to
+ * change - it's just loaded from the database once at startup instead of being
+ * built by hand.
+ */
 public class RoomService {
+    private final RoomDAO roomDAO;
     private List<Room> rooms;
     private List<Booking> bookings;
 
     public RoomService() {
-        this.rooms = new ArrayList<>();
+        this.roomDAO = new RoomDAO();
         this.bookings = new ArrayList<>();
+        this.rooms = new ArrayList<>(roomDAO.getAllRooms());
     }
 
     public void addRoom(Room room) {
+        roomDAO.insertRoom(room);
         rooms.add(room);
+    }
+
+    /** Enables or disables a room (e.g. from the admin dashboard) and keeps the in-memory cache in sync. */
+    public void setRoomEnabled(String roomId, boolean enabled) {
+        roomDAO.updateRoomStatus(roomId, enabled);
+
+        for (Room room : rooms) {
+            if (room.getRoomId().equals(roomId)) {
+                if (enabled) {
+                    room.enable();
+                } else {
+                    room.disable();
+                }
+                break;
+            }
+        }
     }
 
     public void addBookingRecord(Booking booking) {
