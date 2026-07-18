@@ -25,8 +25,13 @@ public interface BadgeScanRepository {
      */
     int countDistinctTappersForBooking(String bookingId, LocalDateTime since);
 
-    /** True if this person has already tapped in for the booking. */
-    boolean hasTapped(String bookingId, String identificationNumber, LocalDateTime since);
+    /**
+     * True if this account has already tapped in for the booking. Keyed by
+     * user ID (unique per account) rather than identification number, since
+     * registration does not currently enforce unique ID numbers - two
+     * accounts sharing one number must still count as two people.
+     */
+    boolean hasTapped(String bookingId, String userId, LocalDateTime since);
 
     /** Most recent scans first, at most {@code limit} of them. */
     List<BadgeScanRecord> findRecent(int limit);

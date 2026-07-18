@@ -1,5 +1,6 @@
 package scheduler.view;
 
+import scheduler.util.AppClock;
 import javax.swing.*;
 import java.awt.*;
 import java.time.LocalDate;
@@ -14,7 +15,7 @@ public class CalendarPanel extends JPanel {
 
     public CalendarPanel(DateSelectionListener listener) {
         this.displayedMonth = YearMonth.now();
-        this.selectedDate = LocalDate.now();
+        this.selectedDate = AppClock.today();
         this.listener = listener;
 
         setLayout(new BorderLayout(10, 10));
@@ -90,7 +91,7 @@ public class CalendarPanel extends JPanel {
 
         int daysInMonth = displayedMonth.lengthOfMonth();
 
-        LocalDate today = LocalDate.now();
+        LocalDate today = AppClock.today();
 
         for (int day = 1; day <= daysInMonth; day++) {
             LocalDate date = displayedMonth.atDay(day);

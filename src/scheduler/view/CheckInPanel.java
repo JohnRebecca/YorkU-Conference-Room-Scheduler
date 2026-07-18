@@ -282,6 +282,16 @@ public class CheckInPanel extends JPanel {
     // Refresh helpers
     // ---------------------------------------------------------------
 
+    /**
+     * Opens this tab focused on a specific booking (e.g. from the Check In
+     * button on a My Bookings card): reloads the picker, then selects it.
+     */
+    public void selectBooking(Booking booking) {
+        refreshBookings();
+        bookingCombo.setSelectedItem(booking);
+        refreshStatus();
+    }
+
     /** Reloads the confirmed bookings of the signed-in user into the picker. */
     public void refreshBookings() {
         Booking previous = selectedBooking();

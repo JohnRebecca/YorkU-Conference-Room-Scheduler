@@ -1,5 +1,6 @@
 package scheduler.view;
 
+import scheduler.util.AppClock;
 import scheduler.model.Booking;
 import scheduler.model.RegisteredUser;
 import scheduler.model.Room;
@@ -55,7 +56,7 @@ public class BookingFormPanel extends JPanel {
         this.userContext = userContext;
         this.onBackToRooms = onBackToRooms;
         this.onBookingConfirmed = onBookingConfirmed;
-        this.selectedDate = LocalDate.now();
+        this.selectedDate = AppClock.today();
 
         setLayout(new BorderLayout(20, 20));
         setBackground(Theme.BG);
@@ -277,7 +278,7 @@ public class BookingFormPanel extends JPanel {
         }
 
         List<String> availableTimes = new ArrayList<>();
-        boolean isToday = selectedDate.equals(LocalDate.now());
+        boolean isToday = selectedDate.equals(AppClock.today());
         LocalTime now = LocalTime.now();
 
         for (String time : ALL_START_TIMES) {

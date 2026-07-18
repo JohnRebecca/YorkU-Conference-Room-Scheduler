@@ -52,7 +52,7 @@ public class SqliteBadgeScanRepository implements BadgeScanRepository {
     @Override
     public int countDistinctTappersForBooking(String bookingId, LocalDateTime since) {
         String sql = """
-            SELECT COUNT(DISTINCT identification_number) FROM badge_scans
+            SELECT COUNT(DISTINCT user_id) FROM badge_scans
             WHERE booking_id = ? AND scanned_at >= ?
             """;
 
@@ -73,10 +73,10 @@ public class SqliteBadgeScanRepository implements BadgeScanRepository {
     }
 
     @Override
-    public boolean hasTapped(String bookingId, String identificationNumber, LocalDateTime since) {
+    public boolean hasTapped(String bookingId, String userId, LocalDateTime since) {
         String sql = """
             SELECT 1 FROM badge_scans
-            WHERE booking_id = ? AND identification_number = ? AND scanned_at >= ?
+            WHERE booking_id = ? AND user_id = ? AND scanned_at >= ?
             LIMIT 1
             """;
 
@@ -85,7 +85,7 @@ public class SqliteBadgeScanRepository implements BadgeScanRepository {
                 PreparedStatement statement = connection.prepareStatement(sql)
         ) {
             statement.setString(1, bookingId);
-            statement.setString(2, identificationNumber);
+            statement.setString(2, userId);
             statement.setString(3, since.format(ISO));
 
             try (ResultSet resultSet = statement.executeQuery()) {

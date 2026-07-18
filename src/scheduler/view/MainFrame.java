@@ -22,6 +22,8 @@ public class MainFrame extends JFrame {
     private UserContext userContext;
 
     private MyBookingsPanel myBookingsPanel;
+    private CheckInPanel checkInPanel;
+    private BadgeSensorPanel badgeSensorPanel;
     private BookingFormPanel bookingFormPanel;
     private JLabel userLabel;
     private final Runnable logoutHandler;
@@ -78,7 +80,13 @@ public class MainFrame extends JFrame {
         mainContentPanel = new JPanel(cardLayout);
         mainContentPanel.setBackground(Theme.BG);
 
-        myBookingsPanel = new MyBookingsPanel(bookingService, checkInService, userContext);
+        myBookingsPanel = new MyBookingsPanel(bookingService, checkInService, userContext,
+                booking -> {
+                    if (checkInPanel != null) {
+                        checkInPanel.selectBooking(booking);
+                        showCard("CheckIn");
+                    }
+                });
 
         bookingFormPanel = new BookingFormPanel(
                 bookingService,
@@ -106,9 +114,48 @@ public class MainFrame extends JFrame {
 
         ProfilePanel profilePanel =  new ProfilePanel( profileService, userContext );
 
-        PlaceholderPanel checkInPanel = new PlaceholderPanel(
-                "Check In",
-                "Check in from the \"Check In\" button on a confirmed booking under My Bookings. The room sensor and badge scanner are simulated there since no physical hardware is connected."
+        // Sensor Check-In module (Adapter Pattern): simulated vendor hardware
+        // wrapped behind the OccupancySensor / BadgeScanner interfaces.
+        scheduler.sensor.hardware.LegacyMotionUnit motionUnit = new scheduler.sensor.hardware.LegacyMotionUnit();
+        scheduler.sensor.hardware.MagStripeBadgeReader badgeReader = new scheduler.sensor.hardware.MagStripeBadgeReader();
+        scheduler.sensor.SensorDataLog sensorDataLog = new scheduler.sensor.SensorDataLog();
+        scheduler.sensor.MotionUnitOccupancyAdapter occupancyAdapter =
+                new scheduler.sensor.MotionUnitOccupancyAdapter(motionUnit, sensorDataLog);
+        scheduler.sensor.MagStripeBadgeAdapter badgeAdapter =
+                new scheduler.sensor.MagStripeBadgeAdapter(badgeReader, sensorDataLog);
+        scheduler.repository.BadgeScanRepository badgeScanRepository =
+                new scheduler.repository.SqliteBadgeScanRepository();
+        scheduler.sensor.SensorCheckInService sensorCheckInService = new scheduler.sensor.SensorCheckInService(
+                occupancyAdapter, badgeAdapter, checkInService, bookingService, badgeScanRepository, sensorDataLog);
+        scheduler.sensor.SensorSimulationController sensorSimulation =
+                new scheduler.sensor.SensorSimulationController(motionUnit, badgeReader, occupancyAdapter, badgeAdapter);
+
+        // Online check-in (Check In tab) and the room badge reader hardware
+        // (ID Badge Sensor tab) refresh each other and My Bookings whenever a
+        // scan or check-in changes booking state.
+        checkInPanel = new CheckInPanel(
+                bookingService,
+                sensorCheckInService,
+                sensorSimulation,
+                sensorDataLog,
+                userContext,
+                () -> {
+                    myBookingsPanel.refreshBookings();
+                    if (badgeSensorPanel != null) {
+                        badgeSensorPanel.refresh();
+                    }
+                }
+        );
+
+        badgeSensorPanel = new BadgeSensorPanel(
+                bookingService,
+                sensorCheckInService,
+                sensorSimulation,
+                userContext,
+                () -> {
+                    myBookingsPanel.refreshBookings();
+                    checkInPanel.refreshBookings();
+                }
         );
 
         mainContentPanel.add(roomsPanel, "Rooms");
@@ -117,6 +164,7 @@ public class MainFrame extends JFrame {
         mainContentPanel.add(paymentPanel, "Payment");
         mainContentPanel.add(profilePanel, "Profile");
         mainContentPanel.add(checkInPanel, "CheckIn");
+        mainContentPanel.add(badgeSensorPanel, "BadgeSensor");
 
         add(sidebarPanel, BorderLayout.WEST);
         add(mainContentPanel, BorderLayout.CENTER);
@@ -124,7 +172,24 @@ public class MainFrame extends JFrame {
         showCard("Rooms");
     }
 
+    /**
+     * Signs a different account into this same window. Bookings live in
+     * memory, so reusing the frame across logins (instead of building a new
+     * one) is what lets an owner book a room, log out, and a guest log in
+     * and scan their badge at that room - all in one run. Panels refresh
+     * through their UserContext listeners.
+     */
+    public void switchUser(RegisteredUser user) {
+        userContext.setCurrentUser(user);
+    }
+
     private void showCard(String name) {
+        if (name.equals("CheckIn") && checkInPanel != null) {
+            checkInPanel.refreshBookings();
+        }
+        if (name.equals("BadgeSensor") && badgeSensorPanel != null) {
+            badgeSensorPanel.refresh();
+        }
         cardLayout.show(mainContentPanel, name);
 
         // BookRoom is reached only via a room card, not a direct sidebar link,
@@ -184,6 +249,7 @@ public class MainFrame extends JFrame {
         registerNavButton(navWrapper, "Rooms", "Rooms", "icon_rooms.png");
         registerNavButton(navWrapper, "MyBookings", "My Bookings", "icon_my_bookings.png");
         registerNavButton(navWrapper, "CheckIn", "Check In", "icon_check_in.png");
+        registerNavButton(navWrapper, "BadgeSensor", "ID Badge Sensor", "icon_check_in.png");
         registerNavButton(navWrapper, "Payment", "Payment", "icon_payment.png");
         registerNavButton(navWrapper, "Profile", "Profile", "icon_profile.png");
 
@@ -224,7 +290,10 @@ public class MainFrame extends JFrame {
         if (result != JOptionPane.YES_OPTION) {
             return;
         }
-        dispose();
+        // Hide rather than dispose: bookings are in-memory, so the frame (and
+        // its services) must survive the logout for the next account to see
+        // existing bookings. Main re-shows this same frame on the next login.
+        setVisible(false);
         logoutHandler.run();
     }
 

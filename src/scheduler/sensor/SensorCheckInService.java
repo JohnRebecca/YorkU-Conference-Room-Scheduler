@@ -121,7 +121,11 @@ public class SensorCheckInService {
             return ScanOutcome.TOO_EARLY;
         }
 
-        boolean isOwner = badgeId.equals(booking.getUser().getIdentificationNumber());
+        // Ownership is decided by ACCOUNT, not by ID number: registration does
+        // not enforce unique identification numbers, so a guest whose badge
+        // happens to carry the same number as the owner's must NOT be able to
+        // check in someone else's booking.
+        boolean isOwner = scanningUser.getUserId().equals(booking.getUser().getUserId());
 
         // Owner scanning a still-confirmed booking -> automatic check-in opens the room.
         if (isOwner && booking.getStatus() == BookingStatus.CONFIRMED) {
@@ -154,7 +158,7 @@ public class SensorCheckInService {
         // but a person only counts towards the tapped-in number once per
         // booking - repeat taps do not increment it.
         boolean alreadyTapped = badgeScanRepository.hasTapped(
-                booking.getBookingId(), badgeId, sessionStart);
+                booking.getBookingId(), scanningUser.getUserId(), sessionStart);
         recordScan(booking, scanningUser, BadgeScanRecord.Result.GUEST_ENTRY);
         dataLog.record(SensorReading.Source.SYSTEM, roomId,
                 (alreadyTapped ? "Repeat tap recorded (already counted): " : "Tapped in: ")
@@ -204,8 +208,9 @@ public class SensorCheckInService {
     }
 
     /**
-     * Tapped-in count for a booking = number of DISTINCT people who have
-     * tapped their badge for it. Every tap is stored in the database, but a
+     * Tapped-in count for a booking = number of DISTINCT accounts that have
+     * tapped their badge for it (user IDs are unique even when two accounts
+     * were registered with the same identification number). Every tap is stored in the database, but a
      * person tapping repeatedly is only counted once per booking. The
      * occupancy sensor's OCCUPIED / EMPTY reading is separate and comes from
      * people physically entering and leaving the room.

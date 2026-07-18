@@ -70,6 +70,23 @@ public final class DatabaseManager {
             """;
 
 
+        // Sensor check-in module (Req5): every ID badge scan at a room reader
+        // is stored - who scanned, at which room, when, and whether it was the
+        // booking owner (auto check-in) or a guest entry.
+        String createBadgeScans = """
+            CREATE TABLE IF NOT EXISTS badge_scans (
+                scan_id INTEGER PRIMARY KEY AUTOINCREMENT,
+                user_id TEXT NOT NULL,
+                full_name TEXT NOT NULL,
+                identification_number TEXT NOT NULL,
+                room_id TEXT NOT NULL,
+                booking_id TEXT NOT NULL,
+                scanned_at TEXT NOT NULL,
+                result TEXT NOT NULL
+                    CHECK (result IN ('OWNER_CHECK_IN', 'GUEST_ENTRY'))
+            )
+            """;
+
         String createAdministrators = """
             CREATE TABLE IF NOT EXISTS administrators (
                 admin_id INTEGER PRIMARY KEY,
@@ -119,6 +136,7 @@ public final class DatabaseManager {
 
             statement.execute(createAdministrators);
             statement.execute(createRooms);
+            statement.execute(createBadgeScans);
 
             statement.executeUpdate(seedAccountTypes);
 

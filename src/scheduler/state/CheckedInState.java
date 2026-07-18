@@ -1,5 +1,6 @@
 package scheduler.state;
 
+import scheduler.util.AppClock;
 import scheduler.exception.InvalidBookingActionException;
 import scheduler.model.Booking;
 import scheduler.model.BookingStatus;
@@ -25,7 +26,7 @@ public class CheckedInState implements BookingState {
 
     @Override
     public void extend(Booking booking, LocalDateTime newEndTime) {
-        if (!LocalDateTime.now().isBefore(booking.getEndTime())) {
+        if (!AppClock.now().isBefore(booking.getEndTime())) {
             throw new InvalidBookingActionException("Booking cannot be extended after expiry.");
         }
 
