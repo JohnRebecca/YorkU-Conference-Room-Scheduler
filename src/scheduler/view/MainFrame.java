@@ -1,9 +1,5 @@
 package scheduler.view;
 
-import java.awt.*;
-import java.util.LinkedHashMap;
-import java.util.Map;
-import javax.swing.*;
 import scheduler.model.Administrator;
 import scheduler.model.RegisteredUser;
 import scheduler.model.Room;
@@ -12,6 +8,11 @@ import scheduler.service.BookingService;
 import scheduler.service.CheckInService;
 import scheduler.service.ProfileService;
 import scheduler.service.RoomService;
+
+import javax.swing.*;
+import java.awt.*;
+import java.util.LinkedHashMap;
+import java.util.Map;
 
 public class MainFrame extends JFrame {
     private CardLayout cardLayout;
@@ -25,6 +26,8 @@ public class MainFrame extends JFrame {
     private MyBookingsPanel myBookingsPanel;
     private CheckInPanel checkInPanel;
     private BadgeSensorPanel badgeSensorPanel;
+    private RoomManagementPanel roomManagementPanel;
+    private AdminGenerationPanel adminGenerationPanel;
     private BookingFormPanel bookingFormPanel;
     private JLabel userLabel;
     private final Runnable logoutHandler;
@@ -179,6 +182,14 @@ public class MainFrame extends JFrame {
                 }
         );
 
+        // Req2/Req6: Room Management sits behind AdminLoginPanel; a successful login
+        // navigates into the real RoomManagementPanel (replacing the old standalone
+        // AdminDashboard popup entirely). "Generate New Admin" and "Back to Room
+        // Management" link the two admin screens to each other.
+        roomManagementPanel = new RoomManagementPanel(() -> showCard("AdminGeneration"));
+        adminGenerationPanel = new AdminGenerationPanel(() -> showCard("RoomManagementHome"));
+        AdminLoginPanel adminLoginPanel = new AdminLoginPanel(() -> showCard("RoomManagementHome"));
+
         mainContentPanel.add(roomsPanel, "Rooms");
         mainContentPanel.add(bookingFormPanel, "BookRoom");
         mainContentPanel.add(myBookingsPanel, "MyBookings");
@@ -186,7 +197,9 @@ public class MainFrame extends JFrame {
         mainContentPanel.add(profilePanel, "Profile");
         mainContentPanel.add(checkInPanel, "CheckIn");
         mainContentPanel.add(badgeSensorPanel, "BadgeSensor");
-        mainContentPanel.add(new AdminLoginPanel(), "RoomManagement");
+        mainContentPanel.add(adminLoginPanel, "RoomManagement");
+        mainContentPanel.add(roomManagementPanel, "RoomManagementHome");
+        mainContentPanel.add(adminGenerationPanel, "AdminGeneration");
 
         add(sidebarPanel, BorderLayout.WEST);
         add(mainContentPanel, BorderLayout.CENTER);
@@ -212,11 +225,18 @@ public class MainFrame extends JFrame {
         if (name.equals("BadgeSensor") && badgeSensorPanel != null) {
             badgeSensorPanel.refresh();
         }
+        if (name.equals("RoomManagementHome") && roomManagementPanel != null) {
+            roomManagementPanel.refreshRooms();
+        }
         cardLayout.show(mainContentPanel, name);
 
-        // BookRoom is reached only via a room card, not a direct sidebar link,
-        // so treat "Rooms" as the active nav item while on the booking form too.
-        String activeNav = name.equals("BookRoom") ? "Rooms" : name;
+        // BookRoom, RoomManagementHome, and AdminGeneration are only reached through
+        // in-app navigation (a room card, a successful admin login, or the links
+        // between the two admin screens), not a direct sidebar link - so keep
+        // whichever sidebar item started that flow highlighted instead of none.
+        String activeNav = name.equals("BookRoom") ? "Rooms"
+                : (name.equals("RoomManagementHome") || name.equals("AdminGeneration")) ? "RoomManagement"
+                : name;
 
         for (Map.Entry<String, SidebarButton> entry : navButtons.entrySet()) {
             entry.getValue().setActive(entry.getKey().equals(activeNav));

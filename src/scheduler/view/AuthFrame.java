@@ -32,6 +32,8 @@ public final class AuthFrame extends JFrame {
     private final AccountTypePanel accountTypePanel;
     private final JLabel currentUserLabel = new JLabel("Guest");
     private final Consumer<RegisteredUser> onLoginSuccess;
+    private final AccountRegistrationService registrationService;
+    private final AuthenticationService authenticationService;
 
     public AuthFrame(
             AccountRegistrationService registrationService,
@@ -40,6 +42,8 @@ public final class AuthFrame extends JFrame {
     ) {
         super("YorkU Conference Room Scheduler");
         this.onLoginSuccess = onLoginSuccess;
+        this.registrationService = registrationService;
+        this.authenticationService = authenticationService;
 
         loginPanel = new LoginPanel( authenticationService, statusPanel, this::handleAuthenticationChanged );
         registerPanel = new RegisterPanel( registrationService, statusPanel,loginPanel::setEmail);
@@ -79,10 +83,14 @@ public final class AuthFrame extends JFrame {
         tabbedPane.addTab( "Register", AuthViewUtils.createScrollable( registerPanel ));
         tabbedPane.addTab( "Login", AuthViewUtils.createScrollable(loginPanel));
         tabbedPane.addTab( "Add Account Type", AuthViewUtils.createScrollable(accountTypePanel));
-        // Req2: lets an administrator go straight to Room Management without first
-        // logging in as a regular RegisteredUser - reuses the same AdminLoginPanel
-        // that also appears inside MainFrame, since it's fully self-contained.
-        tabbedPane.addTab( "Room Management", AuthViewUtils.createScrollable(new AdminLoginPanel()));
+        // Req2: an admin logs in here once and goes straight to Room Management -
+        // no need to also log in again as a regular user. Administrators aren't
+        // RegisteredUsers, so this deliberately doesn't go through MainFrame at all.
+        tabbedPane.addTab( "Room Management", AuthViewUtils.createScrollable(new AdminLoginPanel(() -> {
+            dispose();
+            new AdminFrame(() -> new AuthFrame(registrationService, authenticationService, onLoginSuccess).setVisible(true))
+                    .setVisible(true);
+        })));
 
         JPanel center = new JPanel(new BorderLayout());
         center.setOpaque(false);

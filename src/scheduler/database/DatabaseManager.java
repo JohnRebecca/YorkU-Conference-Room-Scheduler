@@ -6,6 +6,8 @@ import java.sql.DriverManager;
 import java.sql.SQLException;
 import java.sql.Statement;
 
+import scheduler.util.PasswordHasher;
+
 public final class DatabaseManager {
 
     private static final String DATABASE_FOLDER = "data";
@@ -122,7 +124,68 @@ public final class DatabaseManager {
                 ('student', 'Student', 20.00, 'UNIVERSITY'),
                 ('faculty', 'Faculty', 30.00, 'UNIVERSITY'),
                 ('staff', 'Staff', 40.00, 'UNIVERSITY'),
-                ('partner', 'Partner', 50.00, 'PARTNER')
+                ('partner', 'Partner', 50.00, 'PARTNER'),
+                ('admin', 'Admin', 0.00, 'NONE')
+            """;
+
+
+        String seedAdministrators = """
+            INSERT OR IGNORE INTO administrators (
+                admin_id,
+                name,
+                email,
+                password
+            )
+            VALUES (1, 'System Admin', 'admin@yorku.ca', 'Admin123!')
+            """;
+
+
+        String seedRooms = """
+            INSERT OR IGNORE INTO rooms (
+                room_id,
+                capacity,
+                building,
+                location,
+                enabled,
+                closed_for_maintenance
+            )
+            VALUES
+                ('DB-1001', 40, 'DB Building', 'First Floor', 1, 0),
+                ('LAS-2045', 25, 'Lassonde Building', 'Second Floor', 1, 0),
+                ('VH-3002', 60, 'Vari Hall', 'Third Floor', 0, 0),
+                ('ACW-109', 18, 'Accolade West', 'Main Floor', 1, 0)
+            """;
+
+
+        String seedAdminUser = """
+            INSERT OR IGNORE INTO users (
+                user_id,
+                full_name,
+                email,
+                password_hash,
+                account_status,
+                created_at,
+                identification_number,
+                is_verified,
+                account_type_id
+            )
+            VALUES (?, 'System Admin', 'admin@yorku.ca', ?, 'ACTIVE', ?, 'ADMIN-001', 1, 'admin')
+            """;
+
+
+        String seedChiefEventCoordinatorUser = """
+            INSERT OR IGNORE INTO users (
+                user_id,
+                full_name,
+                email,
+                password_hash,
+                account_status,
+                created_at,
+                identification_number,
+                is_verified,
+                account_type_id
+            )
+            VALUES (?, 'Chief Event Coordinator', 'chief.event.coordinator@yorku.ca', ?, 'ACTIVE', ?, 'CEC-001', 1, 'admin')
             """;
 
 
@@ -139,6 +202,26 @@ public final class DatabaseManager {
             statement.execute(createBadgeScans);
 
             statement.executeUpdate(seedAccountTypes);
+            statement.executeUpdate(seedAdministrators);
+            statement.executeUpdate(seedRooms);
+
+            try (
+                    var adminStatement = connection.prepareStatement(seedAdminUser)
+            ) {
+                adminStatement.setString(1, "system-admin");
+                adminStatement.setString(2, PasswordHasher.hash("Admin123!"));
+                adminStatement.setString(3, java.time.LocalDateTime.now().toString());
+                adminStatement.executeUpdate();
+            }
+
+            try (
+                    var chiefStatement = connection.prepareStatement(seedChiefEventCoordinatorUser)
+            ) {
+                chiefStatement.setString(1, "chief-event-coordinator");
+                chiefStatement.setString(2, PasswordHasher.hash("Chief123!"));
+                chiefStatement.setString(3, java.time.LocalDateTime.now().toString());
+                chiefStatement.executeUpdate();
+            }
 
         } catch (SQLException exception) {
 

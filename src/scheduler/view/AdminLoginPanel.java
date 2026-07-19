@@ -1,11 +1,10 @@
 package scheduler.view;
 
-import scheduler.model.Administrator;
-import scheduler.repository.AdminDAO;
-
-import javax.swing.*;
 import java.awt.*;
 import java.util.Optional;
+import javax.swing.*;
+import scheduler.model.Administrator;
+import scheduler.repository.AdminDAO;
 
 /**
  * Req2: the gate in front of Room Management. Logs in against the administrators
@@ -20,12 +19,20 @@ import java.util.Optional;
 public class AdminLoginPanel extends JPanel {
 
     private final AdminDAO adminDAO = new AdminDAO();
+    private final Runnable onLoginSuccess;
 
     private JTextField emailField;
     private JPasswordField passwordField;
     private InlineMessagePanel messagePanel;
 
-    public AdminLoginPanel() {
+    /**
+     * onLoginSuccess navigates to the real Room Management screen (MainFrame
+     * wires this to showCard("RoomManagementHome")) instead of opening the old
+     * standalone AdminDashboard window. Pass null (e.g. from the login screen,
+     * which has no such screen to navigate to) to just confirm success inline.
+     */
+    public AdminLoginPanel(Runnable onLoginSuccess) {
+        this.onLoginSuccess = onLoginSuccess;
         setLayout(new BorderLayout());
         setBackground(Theme.BG);
         setBorder(BorderFactory.createEmptyBorder(40, 60, 40, 60));
@@ -125,6 +132,11 @@ public class AdminLoginPanel extends JPanel {
 
         messagePanel.clear();
         passwordField.setText("");
-        new AdminDashboard().setVisible(true);
+
+        if (onLoginSuccess != null) {
+            onLoginSuccess.run();
+        } else {
+            messagePanel.showSuccess("Login successful. Continue in Room Management after signing in.");
+        }
     }
 }
