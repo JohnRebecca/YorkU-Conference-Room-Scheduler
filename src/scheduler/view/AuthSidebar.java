@@ -73,6 +73,8 @@ public final class AuthSidebar extends JPanel {
         add(createNavigationButton("Login", 1, navigationHandler ));
         add(Box.createVerticalStrut(10));
         add(createNavigationButton( "Add Account Type", 2, navigationHandler));
+        add(Box.createVerticalStrut(10));
+        add(createNavigationButton( "Room Management", 3, navigationHandler));
     }
 
     private JButton createNavigationButton(

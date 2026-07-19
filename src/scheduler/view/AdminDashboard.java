@@ -32,7 +32,7 @@ public class AdminDashboard extends JFrame {
 
         setTitle("Conference Room Scheduler - Admin");
         setSize(700,850);
-        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
         setLayout(null);
 
         JLabel title = new JLabel("Conference Room Scheduler - Admin");

@@ -1,7 +1,9 @@
 package scheduler.view;
 
+import scheduler.model.Administrator;
 import scheduler.model.RegisteredUser;
 import scheduler.model.Room;
+import scheduler.repository.AdminDAO;
 import scheduler.service.BookingService;
 import scheduler.service.CheckInService;
 import scheduler.service.ProfileService;
@@ -67,6 +69,26 @@ public class MainFrame extends JFrame {
 
         bookingService = new BookingService(roomService);
         checkInService = new CheckInService();
+
+        seedChiefEventCoordinatorIfMissing();
+    }
+
+    /**
+     * Req2: bootstraps exactly one administrator account so there's a way to log
+     * into Room Management the first time - AdminDashboard's own "Generate Admin"
+     * button (routed through the ChiefEventCoordinator singleton) can create more
+     * from there. Only runs once; skipped once this email already exists.
+     */
+    private void seedChiefEventCoordinatorIfMissing() {
+        AdminDAO adminDAO = new AdminDAO();
+        String chiefEmail = "chief@yorku.ca";
+
+        if (adminDAO.emailExists(chiefEmail)) {
+            return;
+        }
+
+        Administrator chief = new Administrator(1, "Chief Event Coordinator", chiefEmail, "ChiefAdmin123!");
+        adminDAO.insertAdmin(chief);
     }
 
     private void setupLayout(ProfileService profileService) {
@@ -117,6 +139,7 @@ public class MainFrame extends JFrame {
         mainContentPanel.add(paymentPanel, "Payment");
         mainContentPanel.add(profilePanel, "Profile");
         mainContentPanel.add(checkInPanel, "CheckIn");
+        mainContentPanel.add(new AdminLoginPanel(), "RoomManagement");
 
         add(sidebarPanel, BorderLayout.WEST);
         add(mainContentPanel, BorderLayout.CENTER);
@@ -186,6 +209,11 @@ public class MainFrame extends JFrame {
         registerNavButton(navWrapper, "CheckIn", "Check In", "icon_check_in.png");
         registerNavButton(navWrapper, "Payment", "Payment", "icon_payment.png");
         registerNavButton(navWrapper, "Profile", "Profile", "icon_profile.png");
+
+        // Req2: Room Management now sits behind its own admin login tab (AdminLoginPanel)
+        // instead of opening AdminDashboard directly - anyone could click straight into
+        // it before. AdminDashboard itself is still opened as its own window from there.
+        registerNavButton(navWrapper, "RoomManagement", "Room Management", null);
 
         JPanel north = new JPanel(new BorderLayout());
         north.setBackground(Theme.BLACK);

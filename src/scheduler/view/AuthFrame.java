@@ -79,6 +79,10 @@ public final class AuthFrame extends JFrame {
         tabbedPane.addTab( "Register", AuthViewUtils.createScrollable( registerPanel ));
         tabbedPane.addTab( "Login", AuthViewUtils.createScrollable(loginPanel));
         tabbedPane.addTab( "Add Account Type", AuthViewUtils.createScrollable(accountTypePanel));
+        // Req2: lets an administrator go straight to Room Management without first
+        // logging in as a regular RegisteredUser - reuses the same AdminLoginPanel
+        // that also appears inside MainFrame, since it's fully self-contained.
+        tabbedPane.addTab( "Room Management", AuthViewUtils.createScrollable(new AdminLoginPanel()));
 
         JPanel center = new JPanel(new BorderLayout());
         center.setOpaque(false);
