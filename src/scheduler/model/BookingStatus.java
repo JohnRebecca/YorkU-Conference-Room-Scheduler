@@ -1,0 +1,10 @@
+package scheduler.model;
+
+public enum BookingStatus {
+    PENDING_PAYMENT,
+    CONFIRMED,
+    CHECKED_IN,
+    CANCELLED,
+    COMPLETED,
+    EXPIRED
+}
