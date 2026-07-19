@@ -131,11 +131,6 @@ public class MainFrame extends JFrame {
                 }
         );
 
-        PlaceholderPanel paymentPanel = new PlaceholderPanel(
-                "Payment",
-                "Credit card, debit card, and institutional billing are handled by another module. Booking management only tracks the 1-hour upfront deposit and remaining balance."
-        );
-
         ProfilePanel profilePanel =  new ProfilePanel( profileService, userContext );
 
         // Sensor Check-In module (Adapter Pattern): simulated vendor hardware
@@ -193,7 +188,6 @@ public class MainFrame extends JFrame {
         mainContentPanel.add(roomsPanel, "Rooms");
         mainContentPanel.add(bookingFormPanel, "BookRoom");
         mainContentPanel.add(myBookingsPanel, "MyBookings");
-        mainContentPanel.add(paymentPanel, "Payment");
         mainContentPanel.add(profilePanel, "Profile");
         mainContentPanel.add(checkInPanel, "CheckIn");
         mainContentPanel.add(badgeSensorPanel, "BadgeSensor");
@@ -292,7 +286,6 @@ public class MainFrame extends JFrame {
         registerNavButton(navWrapper, "MyBookings", "My Bookings", "icon_my_bookings.png");
         registerNavButton(navWrapper, "CheckIn", "Check In", "icon_check_in.png");
         registerNavButton(navWrapper, "BadgeSensor", "ID Badge Sensor", "icon_check_in.png");
-        registerNavButton(navWrapper, "Payment", "Payment", "icon_payment.png");
         registerNavButton(navWrapper, "Profile", "Profile", "icon_profile.png");
 
         // Req2: Room Management now sits behind its own admin login tab (AdminLoginPanel)

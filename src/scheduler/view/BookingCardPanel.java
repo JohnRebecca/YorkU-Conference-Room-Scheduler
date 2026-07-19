@@ -25,6 +25,7 @@ public class BookingCardPanel extends CardPanel {
     private static final String VIEW_EXTEND = "extend";
     private static final String VIEW_CHECKIN_OCCUPANCY = "checkinOccupancy";
     private static final String VIEW_CHECKIN_BADGE = "checkinBadge";
+    private static final String VIEW_PAYMENT = "payment";
 
     private final Booking booking;
     private final BookingService bookingService;
@@ -44,6 +45,18 @@ public class BookingCardPanel extends CardPanel {
 
     // Extend form controls
     private JComboBox<Integer> extendHoursCombo;
+
+    // Payment form controls (Req10)
+    private JRadioButton creditCardRadio;
+    private JRadioButton debitCardRadio;
+    private JRadioButton institutionalRadio;
+    private CardLayout paymentMethodCardLayout;
+    private JPanel paymentMethodFields;
+    private JTextField cardNumberField;
+    private JTextField cardExpiryField;
+    private JTextField cardCvvField;
+    private JTextField institutionIdField;
+    private JTextField departmentCodeField;
 
     public BookingCardPanel(
             Booking booking,
@@ -123,6 +136,7 @@ public class BookingCardPanel extends CardPanel {
         actionContainer.add(createExtendView(), VIEW_EXTEND);
         actionContainer.add(createCheckInOccupancyView(), VIEW_CHECKIN_OCCUPANCY);
         actionContainer.add(createCheckInBadgeView(), VIEW_CHECKIN_BADGE);
+        actionContainer.add(createPaymentView(), VIEW_PAYMENT);
 
         wrapper.add(actionContainer, BorderLayout.CENTER);
         return wrapper;
@@ -166,7 +180,7 @@ public class BookingCardPanel extends CardPanel {
         extendButton.setEnabled(canExtend);
         cancelButton.setEnabled(canEditOrCancel);
 
-        payDepositButton.addActionListener(e -> payDeposit());
+        payDepositButton.addActionListener(e -> openPaymentView());
         checkInButton.addActionListener(e -> {
             if (onCheckInRequested != null) {
                 // Hand off to the Check In tab (sensor module) instead of the
@@ -460,16 +474,179 @@ public class BookingCardPanel extends CardPanel {
     // Payment
     // ---------------------------------------------------------------
 
-    private void payDeposit() {
+    // ---------------------------------------------------------------
+    // Payment (Req10: credit card, debit card, or institutional billing)
+    // ---------------------------------------------------------------
+
+    /**
+     * Uses scheduler.payment.strategy's Strategy pattern (CreditCardStrategy /
+     * DebitCardStrategy / InstitutionalBillingStrategy) purely to select and
+     * validate a payment method - the actual state change still goes through
+     * BookingService.payUpfrontFee(), which is what correctly drives the
+     * booking's state machine to CONFIRMED. The payment method chosen here is
+     * recorded onto the booking's own Deposit object for the record.
+     */
+    private JPanel createPaymentView() {
+        JPanel panel = new JPanel();
+        panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
+        panel.setOpaque(false);
+
+        JLabel label = new JLabel("<html>Pay the $" + booking.getDeposit().getAmount() + " upfront deposit</html>");
+        label.setFont(Theme.bodyFont(13));
+        label.setForeground(Theme.TEXT_DARK);
+        label.setAlignmentX(Component.LEFT_ALIGNMENT);
+
+        creditCardRadio = new JRadioButton("Credit Card", true);
+        debitCardRadio = new JRadioButton("Debit Card");
+        institutionalRadio = new JRadioButton("Institutional Billing");
+        for (JRadioButton radio : new JRadioButton[]{creditCardRadio, debitCardRadio, institutionalRadio}) {
+            radio.setOpaque(false);
+            radio.setFont(Theme.bodyFont(12));
+            radio.setForeground(Theme.TEXT_DARK);
+            radio.setAlignmentX(Component.LEFT_ALIGNMENT);
+            radio.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+        }
+        ButtonGroup methodGroup = new ButtonGroup();
+        methodGroup.add(creditCardRadio);
+        methodGroup.add(debitCardRadio);
+        methodGroup.add(institutionalRadio);
+
+        paymentMethodCardLayout = new CardLayout();
+        paymentMethodFields = new JPanel(paymentMethodCardLayout);
+        paymentMethodFields.setOpaque(false);
+        paymentMethodFields.setAlignmentX(Component.LEFT_ALIGNMENT);
+
+        cardNumberField = new JTextField();
+        cardExpiryField = new JTextField();
+        cardCvvField = new JTextField();
+        institutionIdField = new JTextField();
+        departmentCodeField = new JTextField();
+
+        JPanel cardFields = new JPanel();
+        cardFields.setLayout(new BoxLayout(cardFields, BoxLayout.Y_AXIS));
+        cardFields.setOpaque(false);
+        cardFields.add(fieldLabel("Card Number"));
+        cardFields.add(cardNumberField);
+        cardFields.add(Box.createVerticalStrut(4));
+        cardFields.add(fieldLabel("Expiry (MM/YY)"));
+        cardFields.add(cardExpiryField);
+        cardFields.add(Box.createVerticalStrut(4));
+        cardFields.add(fieldLabel("CVV"));
+        cardFields.add(cardCvvField);
+
+        JPanel institutionalFields = new JPanel();
+        institutionalFields.setLayout(new BoxLayout(institutionalFields, BoxLayout.Y_AXIS));
+        institutionalFields.setOpaque(false);
+        institutionalFields.add(fieldLabel("Institution ID"));
+        institutionalFields.add(institutionIdField);
+        institutionalFields.add(Box.createVerticalStrut(4));
+        institutionalFields.add(fieldLabel("Department Code (optional)"));
+        institutionalFields.add(departmentCodeField);
+
+        paymentMethodFields.add(cardFields, "card");
+        paymentMethodFields.add(institutionalFields, "institutional");
+
+        creditCardRadio.addActionListener(e -> paymentMethodCardLayout.show(paymentMethodFields, "card"));
+        debitCardRadio.addActionListener(e -> paymentMethodCardLayout.show(paymentMethodFields, "card"));
+        institutionalRadio.addActionListener(e -> paymentMethodCardLayout.show(paymentMethodFields, "institutional"));
+
+        RoundedButton payButton = new RoundedButton("Pay $" + booking.getDeposit().getAmount() + " Deposit", RoundedButton.Style.PRIMARY);
+        RoundedButton cancelButton = new RoundedButton("Cancel", RoundedButton.Style.SECONDARY);
+
+        payButton.addActionListener(e -> submitPayment(payButton));
+        cancelButton.addActionListener(e -> showView(VIEW_NORMAL));
+
+        panel.add(label);
+        panel.add(Box.createVerticalStrut(10));
+        panel.add(creditCardRadio);
+        panel.add(debitCardRadio);
+        panel.add(institutionalRadio);
+        panel.add(Box.createVerticalStrut(8));
+        panel.add(paymentMethodFields);
+        panel.add(Box.createVerticalStrut(10));
+        panel.add(payButton);
+        panel.add(Box.createVerticalStrut(6));
+        panel.add(cancelButton);
+
+        return panel;
+    }
+
+    private JLabel fieldLabel(String text) {
+        JLabel label = new JLabel(text);
+        label.setFont(Theme.bodyFont(11));
+        label.setForeground(Theme.TEXT_BODY);
+        label.setAlignmentX(Component.LEFT_ALIGNMENT);
+        return label;
+    }
+
+    private void openPaymentView() {
+        // Reset to a clean form each time it's opened.
+        creditCardRadio.setSelected(true);
+        paymentMethodCardLayout.show(paymentMethodFields, "card");
+        cardNumberField.setText("");
+        cardExpiryField.setText("");
+        cardCvvField.setText("");
+        institutionIdField.setText("");
+        departmentCodeField.setText("");
+        showView(VIEW_PAYMENT);
+    }
+
+    private void submitPayment(RoundedButton payButton) {
+        scheduler.payment.strategy.PaymentStrategy strategy;
+
+        if (creditCardRadio.isSelected() || debitCardRadio.isSelected()) {
+            String cardNumber = cardNumberField.getText().trim();
+            String expiry = cardExpiryField.getText().trim();
+            String cvv = cardCvvField.getText().trim();
+
+            if (cardNumber.isEmpty() || expiry.isEmpty() || cvv.isEmpty()) {
+                messagePanel.showError("Enter the card number, expiry, and CVV.");
+                return;
+            }
+
+            strategy = creditCardRadio.isSelected()
+                    ? new scheduler.payment.strategy.CreditCardStrategy(cardNumber, expiry, cvv)
+                    : new scheduler.payment.strategy.DebitCardStrategy(cardNumber, expiry, cvv);
+        } else {
+            String institutionId = institutionIdField.getText().trim();
+            if (institutionId.isEmpty()) {
+                messagePanel.showError("Enter an institution ID.");
+                return;
+            }
+            String departmentCode = departmentCodeField.getText().trim();
+            strategy = departmentCode.isEmpty()
+                    ? new scheduler.payment.strategy.InstitutionalBillingStrategy(institutionId)
+                    : new scheduler.payment.strategy.InstitutionalBillingStrategy(institutionId, departmentCode);
+        }
+
+        payButton.setEnabled(false);
         try {
+            double amount = booking.getDeposit().getAmount();
+
+            scheduler.payment.strategy.PaymentProcessor processor = new scheduler.payment.strategy.PaymentProcessor(strategy);
+            processor.processPayment(amount);
+
+            // The real state transition (PENDING_PAYMENT -> CONFIRMED) already lives in
+            // BookingService/the state pattern - that logic doesn't change. The payment
+            // method chosen here is just recorded onto the booking's existing deposit.
             bookingService.payUpfrontFee(booking);
+            booking.getDeposit().setPaymentMethod(strategy.getPaymentMethodName());
+            if (strategy instanceof scheduler.payment.strategy.InstitutionalBillingStrategy) {
+                booking.getDeposit().setInstitutionId(strategy.getPaymentID());
+            } else {
+                booking.getDeposit().setCardNumber(strategy.getPaymentID());
+            }
+
             messagePanel.showSuccess(
-                    "Deposit of $" + booking.getDeposit().getAmount() + " paid. Booking is now confirmed. "
-                            + "Check in within 30 minutes of the start time or the deposit will be forfeited."
+                    "Deposit of $" + amount + " paid via " + strategy.getPaymentMethodName()
+                            + ". Booking is now confirmed. Check in within 30 minutes of the start time "
+                            + "or the deposit will be forfeited."
             );
             refreshCallback.run();
         } catch (Exception ex) {
             messagePanel.showError(ex.getMessage());
+        } finally {
+            payButton.setEnabled(true);
         }
     }
 }
