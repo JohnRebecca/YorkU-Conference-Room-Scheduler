@@ -75,7 +75,7 @@ public class BookingCardPanel extends CardPanel {
         this.refreshCallback = refreshCallback;
         this.messagePanel = messagePanel;
 
-        setMaximumSize(new Dimension(Integer.MAX_VALUE, 320));
+        setMaximumSize(new Dimension(Integer.MAX_VALUE, 480));
         setBorder(BorderFactory.createEmptyBorder(20, 22, 20, 22));
 
         add(createInfoPanel(), BorderLayout.CENTER);
