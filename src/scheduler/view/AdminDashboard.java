@@ -4,6 +4,7 @@ import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
 import java.util.List;
 
+import scheduler.exception.AuthorizationException;
 import scheduler.service.RoomManagementFacade;
 import scheduler.model.Room;
 import scheduler.model.Administrator;
@@ -340,28 +341,39 @@ public class AdminDashboard extends JFrame {
 
         generateAdmin.addActionListener(e -> {
 
+            try {
 
-            Administrator admin = new Administrator(
+                Administrator admin = new Administrator(
 
-                    Integer.parseInt(adminIDField.getText()),
+                        Integer.parseInt(adminIDField.getText()),
 
-                    adminNameField.getText(),
+                        adminNameField.getText(),
 
-                    adminEmailField.getText(),
+                        adminEmailField.getText(),
 
-                    adminPasswordField.getText()
+                        adminPasswordField.getText()
 
-            );
-
-
-            facade.generateAdministrator(admin);
+                );
 
 
-            JOptionPane.showMessageDialog(
-                    null,
-                    "Administrator Created"
-            );
+                facade.generateAdministrator(admin);
 
+
+                JOptionPane.showMessageDialog(
+                        null,
+                        "Administrator Created"
+                );
+
+            } catch (AuthorizationException exception) {
+
+                JOptionPane.showMessageDialog(
+                        null,
+                        exception.getMessage(),
+                        "Authorization Error",
+                        JOptionPane.ERROR_MESSAGE
+                );
+
+            }
 
         });
 

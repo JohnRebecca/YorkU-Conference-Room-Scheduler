@@ -1,8 +1,9 @@
 package scheduler.view;
 
 import scheduler.exception.AccountException;
+import scheduler.exception.AuthorizationException;
 import scheduler.model.Administrator;
-import scheduler.model.Room;
+import scheduler.model.RegisteredUser;
 import scheduler.service.RoomManagementFacade;
 
 import javax.swing.BorderFactory;
@@ -23,14 +24,16 @@ import java.awt.Insets;
 public class AdminGenerationPanel extends JPanel {
     private final RoomManagementFacade facade;
     private final InlineMessagePanel messagePanel;
+    private final RegisteredUser currentUser;
 
     private final JTextField adminIDField;
     private final JTextField adminNameField;
     private final JTextField adminEmailField;
     private final JTextField adminPasswordField;
 
-    public AdminGenerationPanel() {
+    public AdminGenerationPanel(RegisteredUser currentUser) {
         facade = new RoomManagementFacade();
+        this.currentUser = currentUser;
 
         setLayout(new BorderLayout(20, 20));
         setBackground(Theme.BG);
@@ -150,10 +153,12 @@ public class AdminGenerationPanel extends JPanel {
                     adminPasswordField.getText().trim()
             );
 
-            facade.generateAdministrator(administrator);
+            facade.generateAdministrator(administrator, currentUser);
             messagePanel.showSuccess("Administrator created successfully.");
         } catch (NumberFormatException exception) {
             messagePanel.showError("Admin ID must be a valid number.");
+        } catch (AuthorizationException exception) {
+            messagePanel.showError(exception.getMessage());
         } catch (RuntimeException exception) {
             messagePanel.showError("Unable to create administrator: " + exception.getMessage());
         }

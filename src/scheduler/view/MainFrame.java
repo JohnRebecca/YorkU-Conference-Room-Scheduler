@@ -114,7 +114,7 @@ public class MainFrame extends JFrame {
         );
 
         roomManagementPanel = new RoomManagementPanel();
-        adminGenerationPanel = new AdminGenerationPanel();
+        adminGenerationPanel = new AdminGenerationPanel(userContext.getCurrentUser());
 
         mainContentPanel.add(roomsPanel, "Rooms");
         mainContentPanel.add(bookingFormPanel, "BookRoom");

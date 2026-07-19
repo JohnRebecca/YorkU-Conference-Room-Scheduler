@@ -1,6 +1,8 @@
 package scheduler.service;
 
+import scheduler.exception.AuthorizationException;
 import scheduler.model.Administrator;
+import scheduler.model.RegisteredUser;
 import scheduler.model.Room;
 import scheduler.repository.RoomDAO;
 import scheduler.repository.AdminDAO;
@@ -64,12 +66,20 @@ public class RoomManagementFacade {
 
 
     // Req2: Generate Administrator Account
-    public void generateAdministrator(Administrator admin) {
+    public void generateAdministrator(Administrator admin) throws AuthorizationException {
+
+        generateAdministrator(admin, null);
+
+    }
+
+
+    // Req2: Generate Administrator Account
+    public void generateAdministrator(Administrator admin, RegisteredUser currentUser) throws AuthorizationException {
 
         ChiefEventCoordinator coordinator =
                 ChiefEventCoordinator.getInstance();
 
-        coordinator.generateAdministrator(admin);
+        coordinator.generateAdministrator(admin, currentUser);
 
     }
 
