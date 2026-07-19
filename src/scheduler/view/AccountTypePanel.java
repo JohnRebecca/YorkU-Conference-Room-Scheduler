@@ -48,8 +48,7 @@ public final class AccountTypePanel extends JPanel {
 
         JPanel card = AuthViewUtils.createCard(
                 "Add a New Account Type",
-                "Create another account category without "
-                        + "changing the Java source code."
+                "Create a new account type for the system"
         );
 
         JPanel form =  AuthViewUtils.createFormPanel();

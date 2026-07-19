@@ -4,6 +4,7 @@ import scheduler.model.RegisteredUser;
 import scheduler.model.Room;
 import scheduler.service.BookingService;
 import scheduler.service.CheckInService;
+import scheduler.service.RoomManagementFacade;
 import scheduler.service.RoomService;
 
 import javax.swing.*;
@@ -15,6 +16,7 @@ public class MainFrame extends JFrame {
     private CardLayout cardLayout;
     private JPanel mainContentPanel;
 
+    private RoomManagementFacade roomManagementFacade;
     private RoomService roomService;
     private BookingService bookingService;
     private CheckInService checkInService;
@@ -22,6 +24,8 @@ public class MainFrame extends JFrame {
 
     private MyBookingsPanel myBookingsPanel;
     private BookingFormPanel bookingFormPanel;
+    private RoomManagementPanel roomManagementPanel;
+    private AdminGenerationPanel adminGenerationPanel;
 
     private final Map<String, SidebarButton> navButtons = new LinkedHashMap<>();
 
@@ -44,18 +48,21 @@ public class MainFrame extends JFrame {
     private void setupData(RegisteredUser currentUser) {
         userContext = new UserContext(currentUser);
 
-        Room room1 = new Room("DB-1001", 40, "DB Building", "First Floor");
-        Room room2 = new Room("LAS-2045", 25, "Lassonde Building", "Second Floor");
-        Room room3 = new Room("VH-3002", 60, "Vari Hall", "Third Floor");
-        Room room4 = new Room("ACW-109", 18, "Accolade West", "Main Floor");
+        roomManagementFacade = new RoomManagementFacade();
 
-        room3.disable();
+        if (roomManagementFacade.getAllRooms().isEmpty()) {
+            roomManagementFacade.addRoom(new Room("DB-1001", 40, "DB Building", "First Floor"));
+            roomManagementFacade.addRoom(new Room("LAS-2045", 25, "Lassonde Building", "Second Floor"));
+
+            Room room3 = new Room("VH-3002", 60, "Vari Hall", "Third Floor");
+            room3.disable();
+            roomManagementFacade.addRoom(room3);
+
+            roomManagementFacade.addRoom(new Room("ACW-109", 18, "Accolade West", "Main Floor"));
+        }
 
         roomService = new RoomService();
-        roomService.addRoom(room1);
-        roomService.addRoom(room2);
-        roomService.addRoom(room3);
-        roomService.addRoom(room4);
+        refreshRoomsFromDatabase();
 
         bookingService = new BookingService(roomService);
         checkInService = new CheckInService();
@@ -106,12 +113,17 @@ public class MainFrame extends JFrame {
                 "Check in from the \"Check In\" button on a confirmed booking under My Bookings. The room sensor and badge scanner are simulated there since no physical hardware is connected."
         );
 
+        roomManagementPanel = new RoomManagementPanel();
+        adminGenerationPanel = new AdminGenerationPanel();
+
         mainContentPanel.add(roomsPanel, "Rooms");
         mainContentPanel.add(bookingFormPanel, "BookRoom");
         mainContentPanel.add(myBookingsPanel, "MyBookings");
         mainContentPanel.add(paymentPanel, "Payment");
         mainContentPanel.add(profilePanel, "Profile");
         mainContentPanel.add(checkInPanel, "CheckIn");
+        mainContentPanel.add(roomManagementPanel, "RoomManagement");
+        mainContentPanel.add(adminGenerationPanel, "AdminGeneration");
 
         add(sidebarPanel, BorderLayout.WEST);
         add(mainContentPanel, BorderLayout.CENTER);
@@ -120,6 +132,12 @@ public class MainFrame extends JFrame {
     }
 
     private void showCard(String name) {
+        refreshRoomsFromDatabase();
+
+        if (roomManagementPanel != null && "RoomManagement".equals(name)) {
+            roomManagementPanel.refreshRooms();
+        }
+
         cardLayout.show(mainContentPanel, name);
 
         // BookRoom is reached only via a room card, not a direct sidebar link,
@@ -182,6 +200,30 @@ public class MainFrame extends JFrame {
         registerNavButton(navWrapper, "Payment", "Payment", "icon_payment.png");
         registerNavButton(navWrapper, "Profile", "Profile", "icon_profile.png");
 
+        if (canAccessRoomManagement()) {
+            SidebarButton roomManagementButton = new SidebarButton("Room Management");
+            roomManagementButton.setForeground(Theme.RED);
+            roomManagementButton.setAlignmentX(Component.LEFT_ALIGNMENT);
+            roomManagementButton.setMaximumSize(new Dimension(Integer.MAX_VALUE, 46));
+            roomManagementButton.addActionListener(e -> showCard("RoomManagement"));
+
+            navButtons.put("RoomManagement", roomManagementButton);
+            navWrapper.add(roomManagementButton);
+            navWrapper.add(Box.createVerticalStrut(2));
+        }
+
+        if (canGenerateAdmins()) {
+            SidebarButton adminGenerationButton = new SidebarButton("Generate Admin");
+            adminGenerationButton.setForeground(Theme.RED);
+            adminGenerationButton.setAlignmentX(Component.LEFT_ALIGNMENT);
+            adminGenerationButton.setMaximumSize(new Dimension(Integer.MAX_VALUE, 46));
+            adminGenerationButton.addActionListener(e -> showCard("AdminGeneration"));
+
+            navButtons.put("AdminGeneration", adminGenerationButton);
+            navWrapper.add(adminGenerationButton);
+            navWrapper.add(Box.createVerticalStrut(2));
+        }
+
         JPanel north = new JPanel(new BorderLayout());
         north.setBackground(Theme.BLACK);
         north.add(titlePanel, BorderLayout.NORTH);
@@ -233,5 +275,24 @@ public class MainFrame extends JFrame {
         navButtons.put(cardName, button);
         container.add(button);
         container.add(Box.createVerticalStrut(2));
+    }
+
+    private void refreshRoomsFromDatabase() {
+        roomService.getRooms().clear();
+        roomService.getRooms().addAll(roomManagementFacade.getAllRooms());
+    }
+
+    private boolean canAccessRoomManagement() {
+        String accountTypeName = userContext.getCurrentUser().getAccountType().getName();
+        return accountTypeName != null && accountTypeName.equalsIgnoreCase("Admin");
+    }
+
+    private boolean canGenerateAdmins() {
+        RegisteredUser currentUser = userContext.getCurrentUser();
+        String email = currentUser.getEmail();
+        String fullName = currentUser.getFullName();
+
+        return (email != null && email.equalsIgnoreCase("chief.event.coordinator@yorku.ca"))
+                || (fullName != null && fullName.equalsIgnoreCase("Chief Event Coordinator"));
     }
 }

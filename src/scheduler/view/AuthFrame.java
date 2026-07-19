@@ -79,6 +79,7 @@ public final class AuthFrame extends JFrame {
         tabbedPane.addTab( "Register", AuthViewUtils.createScrollable( registerPanel ));
         tabbedPane.addTab( "Login", AuthViewUtils.createScrollable(loginPanel));
         tabbedPane.addTab( "Add Account Type", AuthViewUtils.createScrollable(accountTypePanel));
+        tabbedPane.setSelectedIndex(1);
 
         JPanel center = new JPanel(new BorderLayout());
         center.setOpaque(false);
