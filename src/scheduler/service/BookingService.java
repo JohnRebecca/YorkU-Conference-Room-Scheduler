@@ -1,5 +1,6 @@
 package scheduler.service;
 
+import scheduler.util.AppClock;
 import scheduler.exception.InvalidBookingActionException;
 import scheduler.exception.RoomUnavailableException;
 import scheduler.model.Booking;
@@ -111,7 +112,7 @@ public class BookingService {
             throw new IllegalArgumentException("End time must be after start time.");
         }
 
-        if (!startTime.isAfter(LocalDateTime.now())) {
+        if (!startTime.isAfter(AppClock.now())) {
             throw new IllegalArgumentException("Booking start time must be in the future.");
         }
     }

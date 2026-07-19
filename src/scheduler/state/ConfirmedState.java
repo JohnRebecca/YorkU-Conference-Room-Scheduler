@@ -1,5 +1,6 @@
 package scheduler.state;
 
+import scheduler.util.AppClock;
 import scheduler.exception.InvalidBookingActionException;
 import scheduler.model.Booking;
 import scheduler.model.BookingStatus;
@@ -15,7 +16,7 @@ public class ConfirmedState implements BookingState {
 
     @Override
     public void edit(Booking booking, LocalDateTime newStartTime, LocalDateTime newEndTime) {
-        if (!LocalDateTime.now().isBefore(booking.getStartTime())) {
+        if (!AppClock.now().isBefore(booking.getStartTime())) {
             throw new InvalidBookingActionException("Booking cannot be edited after the start time.");
         }
 
@@ -24,7 +25,7 @@ public class ConfirmedState implements BookingState {
 
     @Override
     public void cancel(Booking booking) {
-        if (!LocalDateTime.now().isBefore(booking.getStartTime())) {
+        if (!AppClock.now().isBefore(booking.getStartTime())) {
             throw new InvalidBookingActionException("Booking cannot be cancelled after the start time.");
         }
 
@@ -34,7 +35,7 @@ public class ConfirmedState implements BookingState {
 
     @Override
     public void extend(Booking booking, LocalDateTime newEndTime) {
-        if (!LocalDateTime.now().isBefore(booking.getEndTime())) {
+        if (!AppClock.now().isBefore(booking.getEndTime())) {
             throw new InvalidBookingActionException("Booking cannot be extended after it has expired.");
         }
 
@@ -49,7 +50,7 @@ public class ConfirmedState implements BookingState {
     public void checkIn(Booking booking) {
         LocalDateTime latestAllowedCheckIn = booking.getStartTime().plusMinutes(30);
 
-        if (LocalDateTime.now().isAfter(latestAllowedCheckIn)) {
+        if (AppClock.now().isAfter(latestAllowedCheckIn)) {
             booking.getDeposit().forfeit();
             booking.setStatus(BookingStatus.EXPIRED);
             booking.setState(new ExpiredState());

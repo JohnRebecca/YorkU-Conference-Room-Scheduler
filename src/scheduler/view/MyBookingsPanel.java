@@ -15,7 +15,11 @@ public class MyBookingsPanel extends JPanel {
     private JPanel bookingListPanel;
     private InlineMessagePanel messagePanel;
 
-    public MyBookingsPanel(BookingService bookingService, CheckInService checkInService, UserContext userContext) {
+    private final java.util.function.Consumer<scheduler.model.Booking> onCheckInRequested;
+
+    public MyBookingsPanel(BookingService bookingService, CheckInService checkInService, UserContext userContext,
+                           java.util.function.Consumer<scheduler.model.Booking> onCheckInRequested) {
+        this.onCheckInRequested = onCheckInRequested;
         this.bookingService = bookingService;
         this.checkInService = checkInService;
         this.userContext = userContext;
@@ -102,7 +106,7 @@ public class MyBookingsPanel extends JPanel {
             bookingListPanel.add(emptyPanel);
         } else {
             for (Booking booking : bookings) {
-                bookingListPanel.add(new BookingCardPanel(booking, bookingService, checkInService, this::refreshBookings, messagePanel));
+                bookingListPanel.add(new BookingCardPanel(booking, bookingService, checkInService, this::refreshBookings, messagePanel, onCheckInRequested));
                 bookingListPanel.add(Box.createVerticalStrut(16));
             }
         }

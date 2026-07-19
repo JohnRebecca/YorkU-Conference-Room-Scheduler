@@ -1,5 +1,6 @@
 package scheduler.state;
 
+import scheduler.util.AppClock;
 import scheduler.exception.InvalidBookingActionException;
 import scheduler.model.Booking;
 import scheduler.model.BookingStatus;
@@ -17,7 +18,7 @@ public class PendingPaymentState implements BookingState {
 
     @Override
     public void edit(Booking booking, LocalDateTime newStartTime, LocalDateTime newEndTime) {
-        if (!LocalDateTime.now().isBefore(booking.getStartTime())) {
+        if (!AppClock.now().isBefore(booking.getStartTime())) {
             throw new InvalidBookingActionException("Booking cannot be edited after the start time.");
         }
 
@@ -26,7 +27,7 @@ public class PendingPaymentState implements BookingState {
 
     @Override
     public void cancel(Booking booking) {
-        if (!LocalDateTime.now().isBefore(booking.getStartTime())) {
+        if (!AppClock.now().isBefore(booking.getStartTime())) {
             throw new InvalidBookingActionException("Booking cannot be cancelled after the start time.");
         }
 

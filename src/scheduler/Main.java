@@ -81,24 +81,36 @@ public final class Main {
         authFrameHolder[0].setVisible(true);
     }
 
+    /**
+     * The one MainFrame for the whole run. Bookings live in memory inside its
+     * services, so logging out hides this frame and the next login re-shows
+     * it (switching the signed-in user) instead of constructing a fresh one -
+     * otherwise every logout would silently erase all bookings.
+     */
+    private static MainFrame mainFrame;
+
     private static void showMainFrame(
             RegisteredUser user,
             AccountRegistrationService registrationService,
             AuthenticationService authenticationService,
             ProfileService profileService
     ) {
-        MainFrame mainFrame =
-                new MainFrame(
-                        user,
-                        profileService,
-                        () -> {
-                            authenticationService.logout();
-                            showAuthFrame(
-                                    registrationService,
-                                    authenticationService,
-                                    profileService
-                            );
-                        });
+        if (mainFrame == null) {
+            mainFrame =
+                    new MainFrame(
+                            user,
+                            profileService,
+                            () -> {
+                                authenticationService.logout();
+                                showAuthFrame(
+                                        registrationService,
+                                        authenticationService,
+                                        profileService
+                                );
+                            });
+        } else {
+            mainFrame.switchUser(user);
+        }
         mainFrame.setVisible(true);
     }
 

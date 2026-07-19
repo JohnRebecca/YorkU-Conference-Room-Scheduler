@@ -1,5 +1,6 @@
 package scheduler.view;
 
+import scheduler.util.AppClock;
 import scheduler.model.Booking;
 import scheduler.model.BookingStatus;
 import scheduler.service.BookingService;
@@ -28,6 +29,8 @@ public class BookingCardPanel extends CardPanel {
     private final Booking booking;
     private final BookingService bookingService;
     private final CheckInService checkInService;
+    /** When set, the Check In button navigates to the Check In tab instead of the inline simulation. */
+    private final java.util.function.Consumer<Booking> onCheckInRequested;
     private final Runnable refreshCallback;
     private final InlineMessagePanel messagePanel;
 
@@ -48,11 +51,14 @@ public class BookingCardPanel extends CardPanel {
             CheckInService checkInService,
             Runnable refreshCallback,
             InlineMessagePanel messagePanel
+    ,
+            java.util.function.Consumer<Booking> onCheckInRequested
     ) {
         super(new BorderLayout(18, 18));
         this.booking = booking;
         this.bookingService = bookingService;
         this.checkInService = checkInService;
+        this.onCheckInRequested = onCheckInRequested;
         this.refreshCallback = refreshCallback;
         this.messagePanel = messagePanel;
 
@@ -135,8 +141,8 @@ public class BookingCardPanel extends CardPanel {
         panel.setOpaque(false);
 
         BookingStatus status = booking.getStatus();
-        boolean beforeStart = LocalDateTime.now().isBefore(booking.getStartTime());
-        boolean beforeEnd = LocalDateTime.now().isBefore(booking.getEndTime());
+        boolean beforeStart = AppClock.now().isBefore(booking.getStartTime());
+        boolean beforeEnd = AppClock.now().isBefore(booking.getEndTime());
 
         boolean canEditOrCancel = (status == BookingStatus.PENDING_PAYMENT || status == BookingStatus.CONFIRMED) && beforeStart;
         boolean canPayDeposit = status == BookingStatus.PENDING_PAYMENT;
@@ -161,7 +167,15 @@ public class BookingCardPanel extends CardPanel {
         cancelButton.setEnabled(canEditOrCancel);
 
         payDepositButton.addActionListener(e -> payDeposit());
-        checkInButton.addActionListener(e -> showView(VIEW_CHECKIN_OCCUPANCY));
+        checkInButton.addActionListener(e -> {
+            if (onCheckInRequested != null) {
+                // Hand off to the Check In tab (sensor module) instead of the
+                // older inline occupancy/badge simulation on this card.
+                onCheckInRequested.accept(booking);
+            } else {
+                showView(VIEW_CHECKIN_OCCUPANCY);
+            }
+        });
         editButton.addActionListener(e -> openEditForm());
         extendButton.addActionListener(e -> openExtendForm());
         cancelButton.addActionListener(e -> showView(VIEW_CONFIRM_CANCEL));
@@ -271,7 +285,7 @@ public class BookingCardPanel extends CardPanel {
     /** Same "no past times for today" filtering used on the create-booking form. */
     private void refreshEditStartTimes() {
         LocalDate selected = editCalendar.getSelectedDate();
-        boolean isToday = selected.equals(LocalDate.now());
+        boolean isToday = selected.equals(AppClock.today());
         LocalTime now = LocalTime.now();
 
         editStartTimeCombo.removeAllItems();
