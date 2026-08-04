@@ -177,4 +177,33 @@ class MagStripeBadgeAdapterTest {
     void descriptionDelegatesToHardware() {
         assertEquals(reader.getFirmwareBanner(), adapter.getScannerDescription());
     }
+    @Test
+    void trackWithoutTimestampIsRejected() {
+    MagStripeBadgeReader reader = new MagStripeBadgeReader();
+    SensorDataLog log = new SensorDataLog();
+    MagStripeBadgeAdapter adapter =
+            new MagStripeBadgeAdapter(reader, log);
+
+    reader.insertCard(
+            adapter.channelFor("DB-1001"),
+            "%YU^STU-100?"
+    );
+
+    assertNull(adapter.scanBadge("DB-1001"));
+    }
+     @Test
+    void encodedTrackUsesEpochSecondsCloseToCurrentTime() {
+    long before = System.currentTimeMillis() / 1000;
+
+    String track = MagStripeBadgeAdapter.encodeTrack("STU-100");
+
+    long after = System.currentTimeMillis() / 1000;
+
+    String[] parts =
+            track.substring(1, track.length() - 1).split("\\^");
+    long encodedTimestamp = Long.parseLong(parts[2]);
+
+    assertTrue(encodedTimestamp >= before && encodedTimestamp <= after);
+    }
+
 }
