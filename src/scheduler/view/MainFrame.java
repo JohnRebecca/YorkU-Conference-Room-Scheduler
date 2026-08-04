@@ -1,7 +1,9 @@
 package scheduler.view;
 
+import scheduler.model.Administrator;
 import scheduler.model.RegisteredUser;
 import scheduler.model.Room;
+import scheduler.repository.AdminDAO;
 import scheduler.service.BookingService;
 import scheduler.service.CheckInService;
 import scheduler.service.ProfileService;
@@ -24,6 +26,8 @@ public class MainFrame extends JFrame {
     private MyBookingsPanel myBookingsPanel;
     private CheckInPanel checkInPanel;
     private BadgeSensorPanel badgeSensorPanel;
+    private RoomManagementPanel roomManagementPanel;
+    private AdminGenerationPanel adminGenerationPanel;
     private BookingFormPanel bookingFormPanel;
     private JLabel userLabel;
     private final Runnable logoutHandler;
@@ -69,6 +73,26 @@ public class MainFrame extends JFrame {
 
         bookingService = new BookingService(roomService);
         checkInService = new CheckInService();
+
+        seedChiefEventCoordinatorIfMissing();
+    }
+
+    /**
+     * Req2: bootstraps exactly one administrator account so there's a way to log
+     * into Room Management the first time - AdminDashboard's own "Generate Admin"
+     * button (routed through the ChiefEventCoordinator singleton) can create more
+     * from there. Only runs once; skipped once this email already exists.
+     */
+    private void seedChiefEventCoordinatorIfMissing() {
+        AdminDAO adminDAO = new AdminDAO();
+        String chiefEmail = "chief@yorku.ca";
+
+        if (adminDAO.emailExists(chiefEmail)) {
+            return;
+        }
+
+        Administrator chief = new Administrator(1, "Chief Event Coordinator", chiefEmail, "ChiefAdmin123!");
+        adminDAO.insertAdmin(chief);
     }
 
     private void setupLayout(ProfileService profileService) {
@@ -105,11 +129,6 @@ public class MainFrame extends JFrame {
                     bookingFormPanel.setRoom(room);
                     showCard("BookRoom");
                 }
-        );
-
-        PlaceholderPanel paymentPanel = new PlaceholderPanel(
-                "Payment",
-                "Credit card, debit card, and institutional billing are handled by another module. Booking management only tracks the 1-hour upfront deposit and remaining balance."
         );
 
         ProfilePanel profilePanel =  new ProfilePanel( profileService, userContext );
@@ -158,13 +177,23 @@ public class MainFrame extends JFrame {
                 }
         );
 
+        // Req2/Req6: Room Management sits behind AdminLoginPanel; a successful login
+        // navigates into the real RoomManagementPanel (replacing the old standalone
+        // AdminDashboard popup entirely). "Generate New Admin" and "Back to Room
+        // Management" link the two admin screens to each other.
+        roomManagementPanel = new RoomManagementPanel(() -> showCard("AdminGeneration"));
+        adminGenerationPanel = new AdminGenerationPanel(() -> showCard("RoomManagementHome"));
+        AdminLoginPanel adminLoginPanel = new AdminLoginPanel(() -> showCard("RoomManagementHome"));
+
         mainContentPanel.add(roomsPanel, "Rooms");
         mainContentPanel.add(bookingFormPanel, "BookRoom");
         mainContentPanel.add(myBookingsPanel, "MyBookings");
-        mainContentPanel.add(paymentPanel, "Payment");
         mainContentPanel.add(profilePanel, "Profile");
         mainContentPanel.add(checkInPanel, "CheckIn");
         mainContentPanel.add(badgeSensorPanel, "BadgeSensor");
+        mainContentPanel.add(adminLoginPanel, "RoomManagement");
+        mainContentPanel.add(roomManagementPanel, "RoomManagementHome");
+        mainContentPanel.add(adminGenerationPanel, "AdminGeneration");
 
         add(sidebarPanel, BorderLayout.WEST);
         add(mainContentPanel, BorderLayout.CENTER);
@@ -190,11 +219,18 @@ public class MainFrame extends JFrame {
         if (name.equals("BadgeSensor") && badgeSensorPanel != null) {
             badgeSensorPanel.refresh();
         }
+        if (name.equals("RoomManagementHome") && roomManagementPanel != null) {
+            roomManagementPanel.refreshRooms();
+        }
         cardLayout.show(mainContentPanel, name);
 
-        // BookRoom is reached only via a room card, not a direct sidebar link,
-        // so treat "Rooms" as the active nav item while on the booking form too.
-        String activeNav = name.equals("BookRoom") ? "Rooms" : name;
+        // BookRoom, RoomManagementHome, and AdminGeneration are only reached through
+        // in-app navigation (a room card, a successful admin login, or the links
+        // between the two admin screens), not a direct sidebar link - so keep
+        // whichever sidebar item started that flow highlighted instead of none.
+        String activeNav = name.equals("BookRoom") ? "Rooms"
+                : (name.equals("RoomManagementHome") || name.equals("AdminGeneration")) ? "RoomManagement"
+                : name;
 
         for (Map.Entry<String, SidebarButton> entry : navButtons.entrySet()) {
             entry.getValue().setActive(entry.getKey().equals(activeNav));
@@ -250,8 +286,12 @@ public class MainFrame extends JFrame {
         registerNavButton(navWrapper, "MyBookings", "My Bookings", "icon_my_bookings.png");
         registerNavButton(navWrapper, "CheckIn", "Check In", "icon_check_in.png");
         registerNavButton(navWrapper, "BadgeSensor", "ID Badge Sensor", "icon_check_in.png");
-        registerNavButton(navWrapper, "Payment", "Payment", "icon_payment.png");
         registerNavButton(navWrapper, "Profile", "Profile", "icon_profile.png");
+
+        // Req2: Room Management now sits behind its own admin login tab (AdminLoginPanel)
+        // instead of opening AdminDashboard directly - anyone could click straight into
+        // it before. AdminDashboard itself is still opened as its own window from there.
+        registerNavButton(navWrapper, "RoomManagement", "Room Management", null);
 
         JPanel north = new JPanel(new BorderLayout());
         north.setBackground(Theme.BLACK);

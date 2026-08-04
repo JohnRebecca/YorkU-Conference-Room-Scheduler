@@ -54,13 +54,13 @@ public final class LoginPanel extends JPanel {
         JPanel wrapper = AuthViewUtils.createPageWrapper();
 
         JPanel card = AuthViewUtils.createCard(
-                        "Login",
-                        "Enter your registered email and password." );
+                "Login",
+                "Enter your username or email and password." );
 
         JPanel form = AuthViewUtils.createFormPanel();
         GridBagConstraints constraints = AuthViewUtils.createConstraints();
 
-        AuthViewUtils.addRow( form, constraints, 0, "Email", emailField );
+        AuthViewUtils.addRow( form, constraints, 0, "Username / Email", emailField );
         AuthViewUtils.addRow( form, constraints, 1, "Password", passwordField );
         configureShowPasswordCheckBox();
 

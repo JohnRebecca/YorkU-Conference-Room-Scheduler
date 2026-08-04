@@ -5,7 +5,9 @@ import scheduler.model.Administrator;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.Optional;
 
 public class AdminDAO {
 
@@ -33,6 +35,59 @@ public class AdminDAO {
 
         } catch (SQLException e) {
             e.printStackTrace();
+        }
+    }
+
+    /** Req2 login support: looks up an administrator by email so AdminLoginPanel can verify credentials. */
+    public Optional<Administrator> findByEmail(String email) {
+
+        String sql = "SELECT * FROM administrators WHERE email = ?";
+
+        try (
+                Connection conn = DatabaseManager.getConnection();
+                PreparedStatement statement = conn.prepareStatement(sql)
+        ) {
+
+            statement.setString(1, email);
+
+            try (ResultSet resultSet = statement.executeQuery()) {
+                if (resultSet.next()) {
+                    Administrator admin = new Administrator(
+                            resultSet.getInt("admin_id"),
+                            resultSet.getString("name"),
+                            resultSet.getString("email"),
+                            resultSet.getString("password")
+                    );
+                    return Optional.of(admin);
+                }
+            }
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+
+        return Optional.empty();
+    }
+
+    /** Used once at startup to check whether the Chief Event Coordinator account still needs seeding. */
+    public boolean emailExists(String email) {
+
+        String sql = "SELECT 1 FROM administrators WHERE email = ?";
+
+        try (
+                Connection conn = DatabaseManager.getConnection();
+                PreparedStatement statement = conn.prepareStatement(sql)
+        ) {
+
+            statement.setString(1, email);
+
+            try (ResultSet resultSet = statement.executeQuery()) {
+                return resultSet.next();
+            }
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+            return false;
         }
     }
 }
