@@ -71,7 +71,7 @@ public class MagStripeBadgeAdapter implements BadgeScanner {
 
         String[] parts = rawTrack.substring(1, rawTrack.length() - 1).split("\\^");
 
-        if (parts.length < 2 || parts[1].isBlank()) {
+        if (parts.length < 3 || parts[1].isBlank()) {
             return null;
         }
 
