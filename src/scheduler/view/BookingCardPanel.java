@@ -5,6 +5,11 @@ import scheduler.model.Booking;
 import scheduler.model.BookingStatus;
 import scheduler.service.BookingService;
 import scheduler.service.CheckInService;
+import scheduler.payment.strategy.CreditCardStrategy;
+import scheduler.payment.strategy.DebitCardStrategy;
+import scheduler.payment.strategy.InstitutionalBillingStrategy;
+import scheduler.payment.strategy.PaymentProcessor;
+import scheduler.payment.strategy.PaymentStrategy;
 
 import javax.swing.*;
 import java.awt.*;
@@ -37,6 +42,7 @@ public class BookingCardPanel extends CardPanel {
 
     private final CardLayout actionCardLayout = new CardLayout();
     private final JPanel actionContainer = new JPanel(actionCardLayout);
+    private JScrollPane editScrollPane;
 
     // Edit form controls
     private CalendarPanel editCalendar;
@@ -127,12 +133,13 @@ public class BookingCardPanel extends CardPanel {
     private JPanel createActionArea() {
         JPanel wrapper = new JPanel(new BorderLayout());
         wrapper.setOpaque(false);
-        wrapper.setPreferredSize(new Dimension(220, 0));
+        // A little extra width leaves room for the edit form's scrollbar.
+        wrapper.setPreferredSize(new Dimension(245, 0));
 
         actionContainer.setOpaque(false);
         actionContainer.add(createNormalActions(), VIEW_NORMAL);
         actionContainer.add(createConfirmCancelView(), VIEW_CONFIRM_CANCEL);
-        actionContainer.add(createEditView(), VIEW_EDIT);
+        actionContainer.add(createScrollableEditView(), VIEW_EDIT);
         actionContainer.add(createExtendView(), VIEW_EXTEND);
         actionContainer.add(createCheckInOccupancyView(), VIEW_CHECKIN_OCCUPANCY);
         actionContainer.add(createCheckInBadgeView(), VIEW_CHECKIN_BADGE);
@@ -144,6 +151,14 @@ public class BookingCardPanel extends CardPanel {
 
     private void showView(String viewName) {
         actionCardLayout.show(actionContainer, viewName);
+        actionContainer.revalidate();
+        actionContainer.repaint();
+
+        // Every time Edit opens, begin at the top of the form.
+        if (VIEW_EDIT.equals(viewName) && editScrollPane != null) {
+            SwingUtilities.invokeLater(() ->
+                    editScrollPane.getVerticalScrollBar().setValue(0));
+        }
     }
 
     // ---------------------------------------------------------------
@@ -246,6 +261,24 @@ public class BookingCardPanel extends CardPanel {
     // ---------------------------------------------------------------
     // Edit form (inline, replaces 3 chained JOptionPane input dialogs)
     // ---------------------------------------------------------------
+
+    private JScrollPane createScrollableEditView() {
+        JPanel editView = createEditView();
+        editView.setBorder(BorderFactory.createEmptyBorder(0, 0, 8, 8));
+
+        editScrollPane = new JScrollPane(
+                editView,
+                JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED,
+                JScrollPane.HORIZONTAL_SCROLLBAR_NEVER
+        );
+        editScrollPane.setBorder(null);
+        editScrollPane.setOpaque(false);
+        editScrollPane.getViewport().setOpaque(false);
+        editScrollPane.getVerticalScrollBar().setUnitIncrement(14);
+        editScrollPane.getVerticalScrollBar().setBlockIncrement(70);
+
+        return editScrollPane;
+    }
 
     private JPanel createEditView() {
         JPanel panel = new JPanel();
@@ -592,7 +625,7 @@ public class BookingCardPanel extends CardPanel {
     }
 
     private void submitPayment(RoundedButton payButton) {
-        scheduler.payment.strategy.PaymentStrategy strategy;
+        PaymentStrategy strategy;
 
         if (creditCardRadio.isSelected() || debitCardRadio.isSelected()) {
             String cardNumber = cardNumberField.getText().trim();
@@ -605,8 +638,8 @@ public class BookingCardPanel extends CardPanel {
             }
 
             strategy = creditCardRadio.isSelected()
-                    ? new scheduler.payment.strategy.CreditCardStrategy(cardNumber, expiry, cvv)
-                    : new scheduler.payment.strategy.DebitCardStrategy(cardNumber, expiry, cvv);
+                    ? new CreditCardStrategy(cardNumber, expiry, cvv)
+                    : new DebitCardStrategy(cardNumber, expiry, cvv);
         } else {
             String institutionId = institutionIdField.getText().trim();
             if (institutionId.isEmpty()) {
@@ -615,15 +648,15 @@ public class BookingCardPanel extends CardPanel {
             }
             String departmentCode = departmentCodeField.getText().trim();
             strategy = departmentCode.isEmpty()
-                    ? new scheduler.payment.strategy.InstitutionalBillingStrategy(institutionId)
-                    : new scheduler.payment.strategy.InstitutionalBillingStrategy(institutionId, departmentCode);
+                    ? new InstitutionalBillingStrategy(institutionId)
+                    : new InstitutionalBillingStrategy(institutionId, departmentCode);
         }
 
         payButton.setEnabled(false);
         try {
             double amount = booking.getDeposit().getAmount();
 
-            scheduler.payment.strategy.PaymentProcessor processor = new scheduler.payment.strategy.PaymentProcessor(strategy);
+            PaymentProcessor processor = new PaymentProcessor(strategy);
             processor.processPayment(amount);
 
             // The real state transition (PENDING_PAYMENT -> CONFIRMED) already lives in
@@ -631,7 +664,7 @@ public class BookingCardPanel extends CardPanel {
             // method chosen here is just recorded onto the booking's existing deposit.
             bookingService.payUpfrontFee(booking);
             booking.getDeposit().setPaymentMethod(strategy.getPaymentMethodName());
-            if (strategy instanceof scheduler.payment.strategy.InstitutionalBillingStrategy) {
+            if (strategy instanceof InstitutionalBillingStrategy) {
                 booking.getDeposit().setInstitutionId(strategy.getPaymentID());
             } else {
                 booking.getDeposit().setCardNumber(strategy.getPaymentID());
