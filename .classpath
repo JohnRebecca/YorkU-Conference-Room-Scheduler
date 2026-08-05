@@ -22,4 +22,7 @@
 	<classpathentry kind="lib" path="lib/randoop-all-4.3.4.jar"/>
 	<classpathentry kind="con" path="org.eclipse.jdt.junit.JUNIT_CONTAINER/4"/>
 	<classpathentry kind="output" path="bin"/>
+	<classpathentry kind="src" path="AmalPayment_test"/>
+        <classpathentry kind="src" path="AmalPayment_AI_test"/>
+        <classpathentry kind="src" path="AmalPayment_Randoop"/>
 </classpath>
