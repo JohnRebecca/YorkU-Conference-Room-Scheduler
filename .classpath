@@ -7,14 +7,17 @@
 	</classpathentry>
 	<classpathentry kind="con" path="org.eclipse.jdt.junit.JUNIT_CONTAINER/5"/>
 	<classpathentry kind="src" path="src"/>
-<classpathentry kind="src" path="FarhadAccountAuthentication_test"/>
-        <classpathentry kind="src" path="FarhadAccountAuthentication_AI_test"/>
-        <classpathentry kind="src" path="FarhadRandoop"/>
-        <classpathentry kind="src" path="test"/>
-        <classpathentry kind="src" path="randoop"/>
-        <classpathentry kind="src" path="ai-assistant"/>
-        <classpathentry kind="src" path="RebeccaBookingManagement_test"/>
-<classpathentry kind="src" path="rebeccaRandoop"/>
+	<classpathentry kind="src" path="FarhadAccountAuthentication_test"/>
+	<classpathentry kind="src" path="FarhadAccountAuthentication_AI_test"/>
+	<classpathentry kind="src" path="FarhadRandoop"/>
+	<classpathentry kind="src" path="test"/>
+	<classpathentry kind="src" path="Randoop"/>
+	<classpathentry kind="src" path="AI_Assistant"/>
+	<classpathentry kind="src" path="SaifRoomManagement_test"/>
+	<classpathentry kind="src" path="SaifRoomManagement_AI_test"/>
+	<classpathentry kind="src" path="SaifRoomManagement_Randoop"/>
+	<classpathentry kind="src" path="RebeccaBookingManagement_test"/>
+	<classpathentry kind="src" path="rebeccaRandoop"/>
 	<classpathentry kind="lib" path="lib/sqlite-jdbc-3.53.2.0.jar"/>
 	<classpathentry kind="lib" path="lib/randoop-all-4.3.4.jar"/>
 	<classpathentry kind="con" path="org.eclipse.jdt.junit.JUNIT_CONTAINER/4"/>
